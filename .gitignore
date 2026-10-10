@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+*.local
+*.log
+.DS_Store
+.vite
+
+# dev-server smoke-test artifacts
+devpid.txt
+devout.log
+deverr.log
+
+# editor / OS
+.vscode
+.idea
+Thumbs.db

@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --ring: #6366f1;
+}
+
+.dark {
+  --bg: #0b0f17;
+  --surface: #111827;
+  --surface-2: #1a2233;
+  --border: #243049;
+  --text: #e5e7eb;
+  --text-muted: #94a3b8;
+  --ring: #818cf8;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .app-surface {
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .app-surface-2 {
+    background: var(--surface-2);
+    border-color: var(--border);
+  }
+  .app-muted {
+    color: var(--text-muted);
+  }
+  .app-input {
+    @apply w-full rounded-lg border px-3 py-2 text-sm outline-none transition;
+    background: var(--surface);
+    border-color: var(--border);
+    color: var(--text);
+  }
+  .app-input:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 25%, transparent);
+  }
+  .app-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition active:scale-[0.98] disabled:opacity-50;
+  }
+  .btn-ghost {
+    color: var(--text);
+    background: transparent;
+  }
+  .btn-ghost:hover {
+    background: var(--surface-2);
+  }
+  .btn-outline {
+    @apply border;
+    color: var(--text);
+    border-color: var(--border);
+    background: var(--surface);
+  }
+  .btn-outline:hover {
+    background: var(--surface-2);
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+}
+
+/* thin, theme-aware scrollbars for the editor pane */
+.scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.scroll-slim::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Print — only the A4 canvas is printable                                 */
+/* ----------------------------------------------------------------------- */
+/* The print copy is portaled to a body-level #print-mount; hidden on screen. */
+#print-mount {
+  display: none;
+}
+
+@media print {
+  html,
+  body,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  /* Hide the entire interactive app; show only the clean print copy. */
+  #root {
+    display: none !important;
+  }
+
+  #print-mount {
+    display: block !important;
+  }
+
+  #print-mount #print-root {
+    width: 794px !important;
+    min-height: 1123px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
