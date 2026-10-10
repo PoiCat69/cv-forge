@@ -253,8 +253,32 @@ body {
     print-color-adjust: exact;
   }
 
+  #print-mount #print-root[data-paper="letter"] {
+    width: 816px !important;
+    min-height: 1056px !important;
+  }
+
+  /* Avoid awkward page break splits and orphan headings */
+  .cv-heading-avoid-orphan,
+  h1, h2, h3 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .cv-item-avoid-break,
+  li {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .cv-page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
   @page {
-    size: A4;
+    size: auto;
     margin: 0;
   }
 }

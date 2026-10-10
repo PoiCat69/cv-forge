@@ -74,11 +74,12 @@ export function CVPreview({
     <div
       ref={forPrint ? undefined : containerRef}
       id={forPrint ? 'print-root' : undefined}
+      data-paper={custom.paperSize || 'a4'}
       lang={custom.documentLanguage || 'id'}
       className={forPrint ? 'cv-paper bg-white text-slate-900' : 'relative cv-paper bg-white text-slate-900 shadow-paper'}
       style={style}
     >
-      <Template cv={cv} accent={custom.accent} />
+      <Template cv={cv} accent={custom.accent} forPrint={forPrint} />
 
       {/* Page Break guidelines (Screen preview only, NEVER in print/PDF) */}
       {!forPrint && pageCount > 1 && (
@@ -442,12 +443,14 @@ export function getEffectiveSectionOrder(cv: CVData, defaultOrder: string[]): st
   return order;
 }
 
-function renderSectionById(id: string, cv: CVData, mono?: boolean, serif?: boolean) {
+function renderSectionById(id: string, cv: CVData, mono?: boolean, serif?: boolean, forPrint?: boolean) {
   const customSec = cv.customSections?.find((s) => s.id === id);
   const isPageBreak = !!cv.pageBreakSections?.[id] || !!customSec?.pageBreakBefore;
 
+  let node: React.ReactNode = null;
+
   if (customSec) {
-    return (
+    node = (
       <RenderCustomSection
         key={customSec.id}
         section={customSec}
@@ -456,40 +459,60 @@ function renderSectionById(id: string, cv: CVData, mono?: boolean, serif?: boole
         pageBreakBefore={isPageBreak}
       />
     );
+  } else {
+    switch (id) {
+      case 'summary':
+        node = <Summary key="summary" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      case 'experience':
+        node = <Experience key="experience" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      case 'projects':
+        node = <Projects key="projects" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      case 'skills':
+        node = <Skills key="skills" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      case 'education':
+        node = <Education key="education" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      case 'certifications':
+        node = <Certifications key="certifications" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      case 'honors':
+        node = <Honors key="honors" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+        break;
+      default:
+        return null;
+    }
   }
 
-  switch (id) {
-    case 'summary':
-      return <Summary key="summary" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    case 'experience':
-      return <Experience key="experience" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    case 'projects':
-      return <Projects key="projects" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    case 'skills':
-      return <Skills key="skills" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    case 'education':
-      return <Education key="education" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    case 'certifications':
-      return <Certifications key="certifications" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    case 'honors':
-      return <Honors key="honors" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
-    default:
-      return null;
-  }
+  if (!node) return null;
+
+  return (
+    <div key={id} className={isPageBreak ? 'cv-page-break-before' : undefined}>
+      {isPageBreak && !forPrint && (
+        <div className="mb-2 flex items-center gap-1.5 rounded border border-blue-200 bg-blue-50/80 px-2 py-0.5 text-[10.5px] font-medium text-blue-700 select-none print:hidden">
+          <span>📄 Pemisah Halaman Manual — Dimulai di halaman baru saat dicetak/PDF</span>
+        </div>
+      )}
+      {node}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Templates
 // ---------------------------------------------------------------------------
-type TplProps = { cv: CVData; accent: string };
+type TplProps = { cv: CVData; accent: string; forPrint?: boolean };
 
-function ModernTemplate({ cv }: TplProps) {
+function ModernTemplate({ cv, forPrint }: TplProps) {
   const p = cv.personal;
   const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_MODERN);
 
   return (
     <div className="p-10">
-      <header id="cv-section-personal" className="mb-5 flex items-center gap-5 border-b pb-4" style={{ borderColor: 'var(--accent)' }}>
+      <header id="cv-section-personal" className="mb-5 flex items-center gap-5 border-b pb-4" style={{ borderColor: 'var(--accent)', breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <Avatar cv={cv} />
         <div>
           <h1 className="text-[26px] font-extrabold leading-tight">{p.fullName || 'Your Name'}</h1>
@@ -497,29 +520,29 @@ function ModernTemplate({ cv }: TplProps) {
           <div className="mt-2"><Contact cv={cv} /></div>
         </div>
       </header>
-      {orderedIds.map((id) => renderSectionById(id, cv))}
+      {orderedIds.map((id) => renderSectionById(id, cv, false, false, forPrint))}
     </div>
   );
 }
 
-function TechTemplate({ cv }: TplProps) {
+function TechTemplate({ cv, forPrint }: TplProps) {
   const p = cv.personal;
   const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_TECH);
 
   return (
     <div className="p-10 font-mono">
-      <header id="cv-section-personal" className="mb-4">
+      <header id="cv-section-personal" className="mb-4" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <h1 className="text-[24px] font-bold">{p.fullName || 'Your Name'}</h1>
         <p className="text-[12px]" style={{ color: 'var(--accent)' }}>{p.title || 'Your professional title'}</p>
         <div className="mt-2"><Contact cv={cv} mono /></div>
         <div className="mt-3 h-px w-full" style={{ background: 'var(--accent)' }} />
       </header>
-      {orderedIds.map((id) => renderSectionById(id, cv, true))}
+      {orderedIds.map((id) => renderSectionById(id, cv, true, false, forPrint))}
     </div>
   );
 }
 
-function CreativeTemplate({ cv }: TplProps) {
+function CreativeTemplate({ cv, forPrint }: TplProps) {
   const p = cv.personal;
   // In Creative, sidebar holds personal + skills.
   // Main pane renders ordered content sections (excluding skills).
@@ -547,7 +570,7 @@ function CreativeTemplate({ cv }: TplProps) {
           {p.github && <div className="flex items-center gap-1.5"><Github size={11} /> {p.github}</div>}
         </div>
         {cv.sectionVisibility.skills && !!cv.skills.length && (
-          <div className="mt-5">
+          <div className="mt-5" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             <h2 className="mb-1.5 text-[11px] font-bold uppercase tracking-wider">{cv.sectionLabels?.skills || 'Skills'}</h2>
             {cv.skills.map((g) => (
               <div key={g.id} className="mb-1.5 text-[10.5px]">
@@ -560,24 +583,24 @@ function CreativeTemplate({ cv }: TplProps) {
       </aside>
       {/* Main */}
       <div className="flex-1 p-7">
-        {orderedIds.map((id) => renderSectionById(id, cv))}
+        {orderedIds.map((id) => renderSectionById(id, cv, false, false, forPrint))}
       </div>
     </div>
   );
 }
 
-function ClassicTemplate({ cv }: TplProps) {
+function ClassicTemplate({ cv, forPrint }: TplProps) {
   const p = cv.personal;
   const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_CLASSIC);
 
   return (
     <div className="p-12" style={{ fontFamily: 'Georgia, serif' }}>
-      <header id="cv-section-personal" className="mb-5 text-center">
+      <header id="cv-section-personal" className="mb-5 text-center" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
         <h1 className="text-[26px] font-bold">{p.fullName || 'Your Name'}</h1>
         <p className="text-[13px] italic text-slate-700">{p.title || 'Your professional title'}</p>
         <div className="mt-2 flex justify-center"><Contact cv={cv} /></div>
       </header>
-      {orderedIds.map((id) => renderSectionById(id, cv, false, true))}
+      {orderedIds.map((id) => renderSectionById(id, cv, false, true, forPrint))}
     </div>
   );
 }
