@@ -381,7 +381,7 @@ export function CommandPaletteModal({
       }}
     >
       <div
-        className="animate-modal-enter relative flex max-h-[80vh] w-full max-w-xl flex-col overflow-hidden rounded-card border border-[var(--border)] app-surface shadow-2xl"
+        className="animate-modal-enter relative flex max-h-[80vh] w-full max-w-xl flex-col overflow-hidden rounded-card border border-[var(--border)] app-surface shadow-none"
         onKeyDown={handleKeyDown}
       >
         {/* Search Input Bar */}
@@ -395,7 +395,7 @@ export function CommandPaletteModal({
             placeholder="Ketik perintah atau cari bagian (contoh: PDF, Inter, Pengalaman)..."
             className="flex-1 bg-transparent text-sm leading-normal text-[var(--text)] outline-none placeholder:text-[var(--text-muted)]"
           />
-          <kbd className="hidden sm:inline-block rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
+          <kbd className="hidden sm:inline-block rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] px-2 py-0.5 text-xs font-semibold text-[var(--text-muted)]">
             ESC
           </kbd>
         </div>
@@ -438,7 +438,7 @@ export function CommandPaletteModal({
                       <div className="flex items-center gap-2">
                         <span className="truncate text-xs font-semibold">{item.title}</span>
                         <span
-                          className={`text-[10px] ${
+                          className={`text-xs ${
                             isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'
                           }`}
                         >
@@ -447,7 +447,7 @@ export function CommandPaletteModal({
                       </div>
                       {item.subtitle && (
                         <p
-                          className={`truncate text-[11px] ${
+                          className={`truncate text-xs ${
                             isSelected ? 'text-white/80' : 'text-[var(--text-muted)]'
                           }`}
                         >
@@ -460,7 +460,7 @@ export function CommandPaletteModal({
                   <div className="flex items-center gap-2 shrink-0">
                     {item.shortcut && (
                       <kbd
-                        className={`rounded-control px-1.5 py-0.5 text-[10px] font-semibold ${
+                        className={`rounded-control px-1.5 py-0.5 text-xs font-semibold ${
                           isSelected
                             ? 'bg-white/20 text-white'
                             : 'border border-[var(--border)] bg-[var(--surface-pearl)] text-[var(--text-muted)]'
@@ -470,7 +470,7 @@ export function CommandPaletteModal({
                       </kbd>
                     )}
                     <ArrowRight
-                      size={13}
+                      size={14}
                       className={`opacity-0 transition-opacity ${
                         isSelected ? 'opacity-100' : ''
                       }`}
@@ -483,7 +483,7 @@ export function CommandPaletteModal({
         </div>
 
         {/* Footer info */}
-        <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-pearl)] px-4 py-2 text-[11px] text-[var(--text-muted)]">
+        <div className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-pearl)] px-4 py-2 text-xs text-[var(--text-muted)]">
           <span>Gunakan ↑ ↓ untuk navigasi, Enter untuk memilih</span>
           <span>{filtered.length} opsi tersedia</span>
         </div>

@@ -61,8 +61,8 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="flex min-h-[300px] h-full w-full items-center justify-center p-6 bg-[var(--bg)] text-[var(--text)]">
-          <div className="max-w-md w-full rounded-card border border-[var(--border)] bg-[var(--surface)] p-6 shadow-sm text-center">
-            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/60 dark:text-red-400">
+          <div className="max-w-md w-full rounded-card border border-[var(--border)] bg-[var(--surface)] p-6 shadow-none text-center">
+            <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-pill bg-[var(--status-danger-bg)] text-[var(--status-danger)]">
               <AlertCircle size={26} />
             </div>
             <h2 className="text-lg font-semibold tracking-tight text-[var(--text)] mb-2">
@@ -94,7 +94,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <button
                 type="button"
                 onClick={this.handleReset}
-                className="btn btn-ghost w-full rounded-pill text-xs text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                className="btn btn-ghost w-full rounded-pill text-xs text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)]"
               >
                 <RotateCcw size={14} />
                 <span>Reset ke Data Kosong</span>

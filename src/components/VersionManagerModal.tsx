@@ -116,7 +116,7 @@ export function VersionManagerModal({
                         className="btn btn-primary rounded-control px-2.5 py-1 text-xs"
                         onClick={() => handleSaveRename(v.id)}
                       >
-                        <Check size={13} />
+                        <Check size={14} />
                       </button>
                     </div>
                   ) : (
@@ -129,13 +129,13 @@ export function VersionManagerModal({
                         {v.name}
                       </button>
                       {isActive && (
-                        <span className="rounded-pill bg-[var(--primary)] px-2 py-0.5 text-[10px] font-semibold text-white">
+                        <span className="rounded-pill bg-[var(--primary)] px-2 py-0.5 text-xs font-semibold text-white">
                           Aktif
                         </span>
                       )}
                     </div>
                   )}
-                  <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+                  <p className="mt-0.5 text-xs text-[var(--text-muted)]">
                     Diperbarui {new Date(v.updatedAt).toLocaleDateString()}
                   </p>
                 </div>
@@ -159,7 +159,7 @@ export function VersionManagerModal({
                     title="Ganti nama versi"
                     aria-label="Ganti nama versi"
                   >
-                    <Edit2 size={13} />
+                    <Edit2 size={14} />
                   </button>
                   <button
                     type="button"
@@ -168,7 +168,7 @@ export function VersionManagerModal({
                     title="Duplikat versi ini"
                     aria-label="Duplikat versi ini"
                   >
-                    <Copy size={13} />
+                    <Copy size={14} />
                   </button>
                   {versions.length > 1 && (
                     <button
@@ -178,11 +178,11 @@ export function VersionManagerModal({
                           onDelete(v.id);
                         }
                       }}
-                      className="grid h-7 w-7 place-items-center rounded-control text-red-600 hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
+                      className="grid h-7 w-7 place-items-center rounded-control text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
                       title="Hapus versi ini"
                       aria-label="Hapus versi ini"
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={14} />
                     </button>
                   )}
                 </div>

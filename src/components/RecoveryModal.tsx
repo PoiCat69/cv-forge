@@ -32,9 +32,9 @@ export function RecoveryModal({
       aria-labelledby="recovery-modal-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
     >
-      <div className="w-full max-w-lg rounded-card border border-[var(--border)] bg-[var(--surface)] p-6 shadow-2xl text-[var(--text)] animate-modal-enter">
+      <div className="w-full max-w-lg rounded-card border border-[var(--border)] bg-[var(--surface)] p-6 shadow-none text-[var(--text)] animate-modal-enter">
         <div className="flex items-start gap-4">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-pill bg-[var(--status-warning-bg)] text-[var(--status-warning)]">
             <AlertTriangle size={24} />
           </div>
           <div className="flex-1">
@@ -58,7 +58,7 @@ export function RecoveryModal({
               <Sparkles size={18} className="text-[var(--primary)]" />
               <div>
                 <div className="text-sm font-semibold">Pulihkan dari Snapshot Terakhir</div>
-                <div className="text-[11px] text-[var(--text-muted)]">
+                <div className="text-xs text-[var(--text-muted)]">
                   Muat data otomatis dari riwayat snapshot yang tersimpan sebelum data rusak
                 </div>
               </div>
@@ -73,33 +73,33 @@ export function RecoveryModal({
             className="flex w-full items-center justify-between rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-3.5 text-left transition duration-fast hover:border-[var(--primary)] hover:bg-[var(--surface)] active:scale-[0.98]"
           >
             <div className="flex items-center gap-3">
-              <Download size={18} className="text-emerald-600 dark:text-emerald-400" />
+              <Download size={18} className="text-[var(--status-success)]" />
               <div>
                 <div className="text-sm font-semibold">Unduh Data Rusak (JSON)</div>
-                <div className="text-[11px] text-[var(--text-muted)]">
+                <div className="text-xs text-[var(--text-muted)]">
                   Simpan file data mentah ke komputer agar isi tulisan sebelumnya tidak hilang
                 </div>
               </div>
             </div>
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Unduh &darr;</span>
+            <span className="text-xs font-semibold text-[var(--status-success)]">Unduh &darr;</span>
           </button>
 
           {/* Opsi 3: Mulai Kosong */}
           <button
             type="button"
             onClick={onStartBlank}
-            className="flex w-full items-center justify-between rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-3.5 text-left transition duration-fast hover:border-red-400 hover:bg-red-500/5 active:scale-[0.98]"
+            className="flex w-full items-center justify-between rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-3.5 text-left transition duration-fast hover:border-[var(--status-danger)] hover:bg-[var(--status-danger-bg)] active:scale-[0.98]"
           >
             <div className="flex items-center gap-3">
-              <RotateCcw size={18} className="text-red-500" />
+              <RotateCcw size={18} className="text-[var(--status-danger)]" />
               <div>
-                <div className="text-sm font-semibold text-red-600 dark:text-red-400">Mulai Kosong</div>
-                <div className="text-[11px] text-[var(--text-muted)]">
+                <div className="text-sm font-semibold text-[var(--status-danger)]">Mulai Kosong</div>
+                <div className="text-xs text-[var(--text-muted)]">
                   Atur ulang formulir ke status baru yang bersih
                 </div>
               </div>
             </div>
-            <span className="text-xs font-semibold text-red-500">Reset</span>
+            <span className="text-xs font-semibold text-[var(--status-danger)]">Reset</span>
           </button>
         </div>
 

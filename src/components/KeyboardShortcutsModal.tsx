@@ -60,7 +60,7 @@ export function KeyboardShortcutsModal({
               className="flex items-center justify-between gap-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-3"
             >
               <span className="text-xs text-[var(--text)]">{sc.desc}</span>
-              <kbd className="shrink-0 rounded-control border border-[var(--border-strong)] bg-[var(--surface)] px-2 py-1 text-[11px] font-mono font-semibold text-[var(--text)] shadow-sm">
+              <kbd className="shrink-0 rounded-control border border-[var(--border-strong)] bg-[var(--surface)] px-2 py-1 text-xs font-mono font-semibold text-[var(--text)]">
                 {sc.key}
               </kbd>
             </div>

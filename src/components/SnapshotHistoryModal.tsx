@@ -66,7 +66,7 @@ export function SnapshotHistoryModal({
             onClick={onTakeSnapshot}
             className="flex items-center gap-1.5 rounded-pill border border-[var(--primary)] bg-[var(--primary)]/10 px-3 py-1 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary)]/20 active:scale-[0.95]"
           >
-            <Camera size={13} />
+            <Camera size={14} />
             <span>Ambil Snapshot Sekarang</span>
           </button>
         </div>
@@ -91,7 +91,7 @@ export function SnapshotHistoryModal({
                         {snap.title}
                       </span>
                     </div>
-                    <span className="text-[11px] text-[var(--text-muted)]">{time}</span>
+                    <span className="text-xs text-[var(--text-muted)]">{time}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -104,17 +104,17 @@ export function SnapshotHistoryModal({
                       className="flex items-center gap-1 rounded-control bg-[var(--primary)] px-2.5 py-1 text-xs font-semibold text-white transition hover:opacity-90 active:scale-[0.95]"
                       title="Pulihkan state CV ke snapshot ini"
                     >
-                      <RotateCcw size={12} />
+                      <RotateCcw size={14} />
                       <span>Pulihkan</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => onDeleteSnapshot(snap.id)}
-                      className="grid h-7 w-7 place-items-center rounded-control text-red-500 hover:bg-red-500/10 active:scale-[0.95]"
+                      className="grid h-7 w-7 place-items-center rounded-control text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
                       title="Hapus snapshot ini"
                       aria-label="Hapus snapshot"
                     >
-                      <Trash2 size={13} />
+                      <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
