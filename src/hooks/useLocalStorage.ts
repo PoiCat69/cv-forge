@@ -2,15 +2,52 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
+export interface StorageOptions {
+  validate?: (val: unknown) => boolean;
+}
+
 /**
  * State persisted to localStorage, debounced on write to avoid thrashing
- * while the user types, with save status and error tracking.
+ * while the user types, with save status, error tracking, and safe recovery backup.
  */
-export function useLocalStorage<T>(key: string, initial: T) {
+export function useLocalStorage<T>(
+  key: string,
+  initial: T,
+  options?: StorageOptions,
+) {
+  const [corruptedRaw, setCorruptedRaw] = useState<string | null>(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (options?.validate && !options.validate(parsed)) {
+        try {
+          localStorage.setItem(`cvforge:corrupt:${Date.now()}`, raw);
+        } catch {}
+        return raw;
+      }
+      return null;
+    } catch {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        try {
+          localStorage.setItem(`cvforge:corrupt:${Date.now()}`, raw);
+        } catch {}
+        return raw;
+      }
+      return null;
+    }
+  });
+
   const [value, setValueState] = useState<T>(() => {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? (JSON.parse(raw) as T) : initial;
+      if (!raw) return initial;
+      const parsed = JSON.parse(raw);
+      if (options?.validate && !options.validate(parsed)) {
+        return initial;
+      }
+      return parsed as T;
     } catch {
       return initial;
     }
@@ -59,7 +96,12 @@ export function useLocalStorage<T>(key: string, initial: T) {
     setValueState(initial);
     setSaveStatus('saved');
     setErrorMessage(null);
+    setCorruptedRaw(null);
   }, [key, initial]);
 
-  return [value, setValue, { reset, saveStatus, errorMessage }] as const;
+  const clearCorrupted = useCallback(() => {
+    setCorruptedRaw(null);
+  }, []);
+
+  return [value, setValue, { reset, saveStatus, errorMessage, corruptedRaw, clearCorrupted }] as const;
 }

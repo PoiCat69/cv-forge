@@ -26,11 +26,23 @@ import { VersionManagerModal } from './components/VersionManagerModal';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { SnapshotHistoryModal } from './components/SnapshotHistoryModal';
 import { CommandPaletteModal } from './components/CommandPaletteModal';
+import { RecoveryModal } from './components/RecoveryModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const STORAGE_KEY = 'cvforge.state.v1';
 
+function isValidAppState(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return false;
+  const obj = data as Record<string, unknown>;
+  if (!('cv' in obj) || !obj.cv || typeof obj.cv !== 'object') return false;
+  const cv = obj.cv as Record<string, unknown>;
+  if (!('personal' in cv) || !cv.personal || typeof cv.personal !== 'object') return false;
+  return true;
+}
+
 export default function App() {
-  const [state, setState, { saveStatus, errorMessage }] = useLocalStorage<AppState>(STORAGE_KEY, defaultState);
+  const [state, setState, { saveStatus, errorMessage, corruptedRaw, clearCorrupted }] =
+    useLocalStorage<AppState>(STORAGE_KEY, defaultState, { validate: isValidAppState });
   const { undo, redo, canUndo, canRedo, commitSnapshot } = useCVHistory(state, setState);
   const {
     versions,
@@ -236,6 +248,37 @@ export default function App() {
     commitSnapshot();
     setState((s) => ({ ...s, cv: emptyCV }));
     setToast({ id: String(Date.now()), message: 'Formulir dikosongkan (Mulai kosong)', onUndo: undo });
+  };
+
+  const handleRestoreFromRecoverySnapshot = () => {
+    if (snapshots.length > 0) {
+      commitSnapshot();
+      setState(snapshots[0].state);
+      setToast({
+        id: String(Date.now()),
+        message: 'Data berhasil dipulihkan dari snapshot terakhir',
+        onUndo: undo,
+      });
+    } else {
+      commitSnapshot();
+      setState(defaultState);
+      setToast({
+        id: String(Date.now()),
+        message: 'Data dipulihkan ke data contoh standar',
+      });
+    }
+    clearCorrupted();
+  };
+
+  const handleStartBlankFromRecovery = () => {
+    commitSnapshot();
+    setState({ cv: emptyCV, customization: defaultCustomization });
+    clearCorrupted();
+    setToast({
+      id: String(Date.now()),
+      message: 'Formulir dimulai dari kosong',
+      onUndo: undo,
+    });
   };
 
   useEffect(() => {
@@ -1069,7 +1112,9 @@ export default function App() {
           {/* Staging A4 canvas with Apple single product drop-shadow */}
           <div className="flex justify-center px-4 pb-16 pt-4 sm:px-6 print-canvas">
             <div className="cv-scale" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-              <CVPreview cv={state.cv} custom={state.customization} onPageCountChange={setPageCount} />
+              <ErrorBoundary fallbackTitle="Terjadi Kendala pada Pratinjau Dokumen">
+                <CVPreview cv={state.cv} custom={state.customization} onPageCountChange={setPageCount} />
+              </ErrorBoundary>
             </div>
           </div>
         </div>
@@ -1226,6 +1271,16 @@ export default function App() {
         canRedo={canRedo}
         onFocusSection={(sec: string) => handleActiveSectionChange(sec)}
       />
+
+      {/* Safe Recovery Modal if corrupted storage data was detected */}
+      {corruptedRaw && (
+        <RecoveryModal
+          corruptedRaw={corruptedRaw}
+          onRestoreSnapshot={handleRestoreFromRecoverySnapshot}
+          onStartBlank={handleStartBlankFromRecovery}
+          onDismiss={clearCorrupted}
+        />
+      )}
 
       {/* ---------------- 4. Hidden print/export copy ---------------- */}
       {typeof document !== 'undefined' &&
