@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ChevronDown, Info, X, Plus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Info, X, Plus, Trash2 } from 'lucide-react';
 
 // --------------------------------------------------------------------------
 // Field with optional guidance tooltip
@@ -303,6 +303,13 @@ export function AccordionSection({
   customTitle,
   onCustomTitleChange,
   onResetCustomTitle,
+  onMoveUp,
+  onMoveDown,
+  canMoveUp = true,
+  canMoveDown = true,
+  onDelete,
+  pageBreakBefore,
+  onPageBreakBeforeChange,
   children,
 }: {
   title: string;
@@ -314,6 +321,13 @@ export function AccordionSection({
   customTitle?: string;
   onCustomTitleChange?: (v: string) => void;
   onResetCustomTitle?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onDelete?: () => void;
+  pageBreakBefore?: boolean;
+  onPageBreakBeforeChange?: (v: boolean) => void;
   children: ReactNode;
 }) {
   const [editingTitle, setEditingTitle] = useState(false);
@@ -396,7 +410,49 @@ export function AccordionSection({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Section Reorder Buttons */}
+          {onMoveUp && onMoveDown && (
+            <div className="flex items-center rounded-control border border-[var(--border)] bg-[var(--surface)] p-0.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                disabled={!canMoveUp}
+                onClick={onMoveUp}
+                title={`Pindahkan ${title} ke atas`}
+                aria-label={`Pindahkan ${title} ke atas`}
+                className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] disabled:opacity-25 disabled:pointer-events-none active:scale-[0.95]"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                type="button"
+                disabled={!canMoveDown}
+                onClick={onMoveDown}
+                title={`Pindahkan ${title} ke bawah`}
+                aria-label={`Pindahkan ${title} ke bawah`}
+                className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] disabled:opacity-25 disabled:pointer-events-none active:scale-[0.95]"
+              >
+                <ChevronDown size={14} />
+              </button>
+            </div>
+          )}
+
+          {/* Delete Button (for custom sections) */}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              title={`Hapus section ${title}`}
+              aria-label={`Hapus section ${title}`}
+              className="grid h-8 w-8 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 active:scale-[0.95]"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
+
           {onVisibleChange && (
             <Toggle
               checked={visible ?? true}
@@ -404,11 +460,12 @@ export function AccordionSection({
               srLabel={`Toggle ${title} section`}
             />
           )}
+
           <button
             type="button"
             onClick={onToggle}
             aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
-            className="grid h-10 w-10 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] active:scale-[0.95]"
+            className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] active:scale-[0.95]"
           >
             <ChevronDown
               size={18}
@@ -420,6 +477,25 @@ export function AccordionSection({
       </div>
       {open && (
         <div className="animate-dropdown-enter border-t border-[var(--border)] p-4 sm:p-6">
+          {/* F2: Page Break Before Option */}
+          {onPageBreakBeforeChange && (
+            <div className="mb-4 flex items-center justify-between rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] px-3 py-2 text-xs">
+              <div className="flex items-center gap-2 text-[var(--text)]">
+                <span className="text-sm">📄</span>
+                <div>
+                  <span className="font-semibold">Mulai di halaman baru</span>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Sisipkan pemisah halaman otomatis sebelum section ini (Page Break)
+                  </p>
+                </div>
+              </div>
+              <Toggle
+                checked={!!pageBreakBefore}
+                onChange={onPageBreakBeforeChange}
+                srLabel={`Mulai section ${title} di halaman baru`}
+              />
+            </div>
+          )}
           {children}
         </div>
       )}

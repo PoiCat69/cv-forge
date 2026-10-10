@@ -162,6 +162,26 @@ export function CVScoreWidget({
       weight: 10,
     });
 
+    // --- Custom Sections (Kelengkapan) ---
+    if (cv.customSections && cv.customSections.length > 0) {
+      cv.customSections.forEach((cs) => {
+        const hasContent =
+          (cs.type === 'bullets' && (cs.bullets || []).filter(Boolean).length > 0) ||
+          (cs.type === 'text' && !!cs.text?.trim()) ||
+          (cs.type === 'items' && (cs.items || []).some((it) => it.title.trim()));
+
+        suggestions.push({
+          id: `custom_${cs.id}`,
+          section: cs.id,
+          group: 'Kelengkapan',
+          label: cs.title || 'Section Kustom',
+          tip: `Lengkapi isi untuk section "${cs.title || 'Kustom'}" agar dokumen lebih informatif.`,
+          passed: hasContent,
+          weight: 5,
+        });
+      });
+    }
+
     const earnedWeight = suggestions.filter((s) => s.passed).reduce((acc, s) => acc + s.weight, 0);
     const totalWeight = suggestions.reduce((acc, s) => acc + s.weight, 0);
     const percentage = Math.round((earnedWeight / totalWeight) * 100);

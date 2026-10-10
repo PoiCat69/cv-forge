@@ -96,6 +96,27 @@ export interface SectionLabels {
   honors?: string;
 }
 
+export type CustomSectionType = 'bullets' | 'text' | 'items';
+
+export interface CustomSectionItem {
+  id: string;
+  title: string;
+  subtitle?: string;
+  date?: string;
+  description?: string;
+}
+
+export interface CustomSection {
+  id: string;
+  title: string;
+  type: CustomSectionType;
+  visible?: boolean;
+  pageBreakBefore?: boolean;
+  bullets?: string[];
+  text?: string;
+  items?: CustomSectionItem[];
+}
+
 export interface CVData {
   personal: PersonalInfo;
   summary: string;
@@ -107,6 +128,9 @@ export interface CVData {
   honors: HonorItem[];
   sectionVisibility: SectionVisibility;
   sectionLabels?: SectionLabels;
+  customSections?: CustomSection[];
+  sectionOrder?: string[];
+  pageBreakSections?: Record<string, boolean>;
 }
 
 // ---------------------------------------------------------------------------

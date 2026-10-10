@@ -52,7 +52,7 @@ export function printCV() {
 /** Exports state to JSON including a format version field. */
 export function downloadJson(state: AppState, fileName: string) {
   const payload = {
-    version: 1,
+    version: 2,
     ...state,
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -72,7 +72,7 @@ export interface ImportValidationResult {
 
 /**
  * Validate and parse an imported JSON file with clear, descriptive error messages.
- * Accepts versioned format (version: 1), full AppState, or legacy bare CVData.
+ * Accepts versioned format (version: 1 or 2), full AppState, or legacy bare CVData.
  */
 export function validateAndParseImport(text: string): ImportValidationResult {
   if (!text || !text.trim()) {
@@ -107,10 +107,15 @@ export function validateAndParseImport(text: string): ImportValidationResult {
         error: 'Objek "cv" ditemukan tetapi tidak memiliki field "personal" yang valid.',
       };
     }
+    const cvData = obj.cv as CVData;
+    // Migration: ensure customSections default to [] if not defined
+    if (!cvData.customSections) {
+      cvData.customSections = [];
+    }
     return {
       ok: true,
       data: {
-        cv: obj.cv as CVData,
+        cv: cvData,
         customization: (obj.customization as Customization) || undefined,
       },
     };
@@ -118,9 +123,13 @@ export function validateAndParseImport(text: string): ImportValidationResult {
 
   // Case 2: Legacy flat CVData with 'personal' property at root
   if ('personal' in obj && typeof obj.personal === 'object' && obj.personal !== null) {
+    const cvData = obj as unknown as CVData;
+    if (!cvData.customSections) {
+      cvData.customSections = [];
+    }
     return {
       ok: true,
-      data: { cv: obj as unknown as CVData },
+      data: { cv: cvData },
     };
   }
 
@@ -170,6 +179,24 @@ export async function exportPng(fileName: string, paperSize: 'a4' | 'letter' = '
   }
 }
 
+function getOrderedExportSectionIds(cv: CVData): string[] {
+  const defaultOrder = ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'honors'];
+  const customIds = (cv.customSections || []).map((s) => s.id);
+  const baseOrder = cv.sectionOrder && cv.sectionOrder.length > 0 ? cv.sectionOrder : defaultOrder;
+
+  const order: string[] = [];
+  for (const id of baseOrder) {
+    if (!order.includes(id)) order.push(id);
+  }
+  for (const cid of customIds) {
+    if (!order.includes(cid)) order.push(cid);
+  }
+  for (const defId of defaultOrder) {
+    if (!order.includes(defId)) order.push(defId);
+  }
+  return order;
+}
+
 /** Formats CV data into clean, readable plain text for pasting into job applications. */
 export function cvToPlainText(cv: CVData): string {
   const lines: string[] = [];
@@ -185,79 +212,92 @@ export function cvToPlainText(cv: CVData): string {
   if (linkParts.length) lines.push(linkParts.join(' | '));
   lines.push('');
 
-  if (cv.summary && cv.sectionVisibility.summary) {
-    const title = cv.sectionLabels?.summary || 'RINGKASAN PROFESIONAL';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    lines.push(cv.summary.trim());
-    lines.push('');
-  }
+  const orderedIds = getOrderedExportSectionIds(cv);
 
-  if (cv.experience.length && cv.sectionVisibility.experience) {
-    const title = cv.sectionLabels?.experience || 'PENGALAMAN KERJA';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    cv.experience.forEach((e) => {
-      lines.push(`${e.role || 'Role'} - ${e.company || 'Perusahaan'}`);
-      const dateLoc = [
-        e.current ? `${e.startDate} - Sekarang` : `${e.startDate} - ${e.endDate}`,
-        e.location,
-      ].filter(Boolean).join(' | ');
-      if (dateLoc) lines.push(dateLoc);
-      e.bullets.filter(Boolean).forEach((b) => lines.push(`• ${b}`));
+  for (const id of orderedIds) {
+    if (id === 'summary' && cv.summary && cv.sectionVisibility.summary) {
+      const title = cv.sectionLabels?.summary || 'RINGKASAN PROFESIONAL';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      lines.push(cv.summary.trim());
       lines.push('');
-    });
-  }
-
-  if (cv.projects.length && cv.sectionVisibility.projects) {
-    const title = cv.sectionLabels?.projects || 'PROYEK PILIHAN';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    cv.projects.forEach((proj) => {
-      lines.push(`${proj.title}${proj.link ? ` (${proj.link})` : ''}`);
-      if (proj.tech.length) lines.push(`Teknologi: ${proj.tech.join(', ')}`);
-      if (proj.description) lines.push(proj.description);
-      proj.achievements.filter(Boolean).forEach((a) => lines.push(`• ${a}`));
+    } else if (id === 'experience' && cv.experience.length && cv.sectionVisibility.experience) {
+      const title = cv.sectionLabels?.experience || 'PENGALAMAN KERJA';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      cv.experience.forEach((e) => {
+        lines.push(`${e.role || 'Role'} - ${e.company || 'Perusahaan'}`);
+        const dateLoc = [
+          e.current ? `${e.startDate} - Sekarang` : `${e.startDate} - ${e.endDate}`,
+          e.location,
+        ].filter(Boolean).join(' | ');
+        if (dateLoc) lines.push(dateLoc);
+        e.bullets.filter(Boolean).forEach((b) => lines.push(`• ${b}`));
+        lines.push('');
+      });
+    } else if (id === 'projects' && cv.projects.length && cv.sectionVisibility.projects) {
+      const title = cv.sectionLabels?.projects || 'PROYEK PILIHAN';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      cv.projects.forEach((proj) => {
+        lines.push(`${proj.title}${proj.link ? ` (${proj.link})` : ''}`);
+        if (proj.tech.length) lines.push(`Teknologi: ${proj.tech.join(', ')}`);
+        if (proj.description) lines.push(proj.description);
+        proj.achievements.filter(Boolean).forEach((a) => lines.push(`• ${a}`));
+        lines.push('');
+      });
+    } else if (id === 'education' && cv.education.length && cv.sectionVisibility.education) {
+      const title = cv.sectionLabels?.education || 'PENDIDIKAN';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      cv.education.forEach((edu) => {
+        const degreeField = [edu.degree, edu.field].filter(Boolean).join(' ');
+        lines.push(`${degreeField ? `${degreeField} - ` : ''}${edu.institution}`);
+        const dateStr = edu.current ? `${edu.startDate} - Sekarang` : `${edu.startDate} - ${edu.endDate}`;
+        if (dateStr.trim()) lines.push(dateStr);
+        if (edu.details) lines.push(edu.details);
+        lines.push('');
+      });
+    } else if (id === 'skills' && cv.skills.length && cv.sectionVisibility.skills) {
+      const title = cv.sectionLabels?.skills || 'KEAHLIAN';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      cv.skills.forEach((g) => {
+        lines.push(`${g.category}: ${g.skills.join(', ')}`);
+      });
       lines.push('');
-    });
-  }
-
-  if (cv.education.length && cv.sectionVisibility.education) {
-    const title = cv.sectionLabels?.education || 'PENDIDIKAN';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    cv.education.forEach((edu) => {
-      const degreeField = [edu.degree, edu.field].filter(Boolean).join(' ');
-      lines.push(`${degreeField ? `${degreeField} - ` : ''}${edu.institution}`);
-      const dateStr = edu.current ? `${edu.startDate} - Sekarang` : `${edu.startDate} - ${edu.endDate}`;
-      if (dateStr.trim()) lines.push(dateStr);
-      if (edu.details) lines.push(edu.details);
+    } else if (id === 'certifications' && cv.certifications.length && cv.sectionVisibility.certifications) {
+      const title = cv.sectionLabels?.certifications || 'SERTIFIKASI';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      cv.certifications.forEach((c) => {
+        lines.push(`${c.name}${c.issuer ? ` - ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`);
+      });
       lines.push('');
-    });
-  }
-
-  if (cv.skills.length && cv.sectionVisibility.skills) {
-    const title = cv.sectionLabels?.skills || 'KEAHLIAN';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    cv.skills.forEach((g) => {
-      lines.push(`${g.category}: ${g.skills.join(', ')}`);
-    });
-    lines.push('');
-  }
-
-  if (cv.certifications.length && cv.sectionVisibility.certifications) {
-    const title = cv.sectionLabels?.certifications || 'SERTIFIKASI';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    cv.certifications.forEach((c) => {
-      lines.push(`${c.name}${c.issuer ? ` - ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`);
-    });
-    lines.push('');
-  }
-
-  if (cv.honors.length && cv.sectionVisibility.honors) {
-    const title = cv.sectionLabels?.honors || 'PENGHARGAAN';
-    lines.push(`=== ${title.toUpperCase()} ===`);
-    cv.honors.forEach((h) => {
-      lines.push(`${h.title}${h.issuer ? ` - ${h.issuer}` : ''}${h.date ? ` (${h.date})` : ''}`);
-      if (h.description) lines.push(`  ${h.description}`);
-    });
-    lines.push('');
+    } else if (id === 'honors' && cv.honors.length && cv.sectionVisibility.honors) {
+      const title = cv.sectionLabels?.honors || 'PENGHARGAAN';
+      lines.push(`=== ${title.toUpperCase()} ===`);
+      cv.honors.forEach((h) => {
+        lines.push(`${h.title}${h.issuer ? ` - ${h.issuer}` : ''}${h.date ? ` (${h.date})` : ''}`);
+        if (h.description) lines.push(`  ${h.description}`);
+      });
+      lines.push('');
+    } else {
+      const cs = cv.customSections?.find((s) => s.id === id);
+      if (cs && cs.visible !== false) {
+        const title = cs.title || 'SECTION KUSTOM';
+        if (cs.type === 'bullets' && cs.bullets && cs.bullets.filter(Boolean).length) {
+          lines.push(`=== ${title.toUpperCase()} ===`);
+          cs.bullets.filter(Boolean).forEach((b) => lines.push(`• ${b}`));
+          lines.push('');
+        } else if (cs.type === 'text' && cs.text && cs.text.trim()) {
+          lines.push(`=== ${title.toUpperCase()} ===`);
+          lines.push(cs.text.trim());
+          lines.push('');
+        } else if (cs.type === 'items' && cs.items && cs.items.length) {
+          lines.push(`=== ${title.toUpperCase()} ===`);
+          cs.items.forEach((it) => {
+            lines.push(`${it.title}${it.subtitle ? ` - ${it.subtitle}` : ''}${it.date ? ` (${it.date})` : ''}`);
+            if (it.description) lines.push(`  ${it.description}`);
+          });
+          lines.push('');
+        }
+      }
+    }
   }
 
   return lines.join('\n').trim();
@@ -282,80 +322,94 @@ export function cvToMarkdown(cv: CVData): string {
   if (links.length) lines.push(links.join(' · '));
   lines.push('');
 
-  if (cv.summary && cv.sectionVisibility.summary) {
-    const title = cv.sectionLabels?.summary || 'Ringkasan Profesional';
-    lines.push(`## ${title}`);
-    lines.push(cv.summary.trim());
-    lines.push('');
-  }
+  const orderedIds = getOrderedExportSectionIds(cv);
 
-  if (cv.experience.length && cv.sectionVisibility.experience) {
-    const title = cv.sectionLabels?.experience || 'Pengalaman Kerja';
-    lines.push(`## ${title}`);
-    cv.experience.forEach((e) => {
-      lines.push(`### ${e.role || 'Role'} — ${e.company || 'Perusahaan'}`);
-      const dateLoc = [
-        e.current ? `${e.startDate} – Sekarang` : `${e.startDate} – ${e.endDate}`,
-        e.location,
-      ].filter(Boolean).join(' | ');
-      if (dateLoc) lines.push(`*${dateLoc}*`);
+  for (const id of orderedIds) {
+    if (id === 'summary' && cv.summary && cv.sectionVisibility.summary) {
+      const title = cv.sectionLabels?.summary || 'Ringkasan Profesional';
+      lines.push(`## ${title}`);
+      lines.push(cv.summary.trim());
       lines.push('');
-      e.bullets.filter(Boolean).forEach((b) => lines.push(`- ${b}`));
+    } else if (id === 'experience' && cv.experience.length && cv.sectionVisibility.experience) {
+      const title = cv.sectionLabels?.experience || 'Pengalaman Kerja';
+      lines.push(`## ${title}`);
+      cv.experience.forEach((e) => {
+        lines.push(`### ${e.role || 'Role'} — ${e.company || 'Perusahaan'}`);
+        const dateLoc = [
+          e.current ? `${e.startDate} – Sekarang` : `${e.startDate} – ${e.endDate}`,
+          e.location,
+        ].filter(Boolean).join(' | ');
+        if (dateLoc) lines.push(`*${dateLoc}*`);
+        lines.push('');
+        e.bullets.filter(Boolean).forEach((b) => lines.push(`- ${b}`));
+        lines.push('');
+      });
+    } else if (id === 'projects' && cv.projects.length && cv.sectionVisibility.projects) {
+      const title = cv.sectionLabels?.projects || 'Proyek Pilihan';
+      lines.push(`## ${title}`);
+      cv.projects.forEach((proj) => {
+        lines.push(`### ${proj.title}`);
+        if (proj.link) lines.push(`*[${proj.link}](${proj.link})*`);
+        if (proj.tech.length) lines.push(`**Teknologi:** ${proj.tech.join(', ')}  `);
+        if (proj.description) lines.push(proj.description);
+        proj.achievements.filter(Boolean).forEach((a) => lines.push(`- ${a}`));
+        lines.push('');
+      });
+    } else if (id === 'education' && cv.education.length && cv.sectionVisibility.education) {
+      const title = cv.sectionLabels?.education || 'Pendidikan';
+      lines.push(`## ${title}`);
+      cv.education.forEach((edu) => {
+        const degreeField = [edu.degree, edu.field].filter(Boolean).join(' in ');
+        lines.push(`### ${degreeField ? `${degreeField} — ` : ''}${edu.institution}`);
+        const dateStr = edu.current ? `${edu.startDate} – Sekarang` : `${edu.startDate} – ${edu.endDate}`;
+        if (dateStr.trim()) lines.push(`*${dateStr}*`);
+        if (edu.details) lines.push(`\n${edu.details}`);
+        lines.push('');
+      });
+    } else if (id === 'skills' && cv.skills.length && cv.sectionVisibility.skills) {
+      const title = cv.sectionLabels?.skills || 'Keahlian';
+      lines.push(`## ${title}`);
+      cv.skills.forEach((g) => {
+        lines.push(`- **${g.category}:** ${g.skills.join(', ')}`);
+      });
       lines.push('');
-    });
-  }
-
-  if (cv.projects.length && cv.sectionVisibility.projects) {
-    const title = cv.sectionLabels?.projects || 'Proyek Pilihan';
-    lines.push(`## ${title}`);
-    cv.projects.forEach((proj) => {
-      lines.push(`### ${proj.title}`);
-      if (proj.link) lines.push(`*[${proj.link}](${proj.link})*`);
-      if (proj.tech.length) lines.push(`**Teknologi:** ${proj.tech.join(', ')}  `);
-      if (proj.description) lines.push(proj.description);
-      proj.achievements.filter(Boolean).forEach((a) => lines.push(`- ${a}`));
+    } else if (id === 'certifications' && cv.certifications.length && cv.sectionVisibility.certifications) {
+      const title = cv.sectionLabels?.certifications || 'Sertifikasi';
+      lines.push(`## ${title}`);
+      cv.certifications.forEach((c) => {
+        lines.push(`- **${c.name}**${c.issuer ? ` — ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`);
+      });
       lines.push('');
-    });
-  }
-
-  if (cv.education.length && cv.sectionVisibility.education) {
-    const title = cv.sectionLabels?.education || 'Pendidikan';
-    lines.push(`## ${title}`);
-    cv.education.forEach((edu) => {
-      const degreeField = [edu.degree, edu.field].filter(Boolean).join(' in ');
-      lines.push(`### ${degreeField ? `${degreeField} — ` : ''}${edu.institution}`);
-      const dateStr = edu.current ? `${edu.startDate} – Sekarang` : `${edu.startDate} – ${edu.endDate}`;
-      if (dateStr.trim()) lines.push(`*${dateStr}*`);
-      if (edu.details) lines.push(`\n${edu.details}`);
+    } else if (id === 'honors' && cv.honors.length && cv.sectionVisibility.honors) {
+      const title = cv.sectionLabels?.honors || 'Penghargaan & Prestasi';
+      lines.push(`## ${title}`);
+      cv.honors.forEach((h) => {
+        lines.push(`- **${h.title}**${h.issuer ? ` — ${h.issuer}` : ''}${h.date ? ` (${h.date})` : ''}${h.description ? ` · ${h.description}` : ''}`);
+      });
       lines.push('');
-    });
-  }
-
-  if (cv.skills.length && cv.sectionVisibility.skills) {
-    const title = cv.sectionLabels?.skills || 'Keahlian';
-    lines.push(`## ${title}`);
-    cv.skills.forEach((g) => {
-      lines.push(`- **${g.category}:** ${g.skills.join(', ')}`);
-    });
-    lines.push('');
-  }
-
-  if (cv.certifications.length && cv.sectionVisibility.certifications) {
-    const title = cv.sectionLabels?.certifications || 'Sertifikasi';
-    lines.push(`## ${title}`);
-    cv.certifications.forEach((c) => {
-      lines.push(`- **${c.name}**${c.issuer ? ` — ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`);
-    });
-    lines.push('');
-  }
-
-  if (cv.honors.length && cv.sectionVisibility.honors) {
-    const title = cv.sectionLabels?.honors || 'Penghargaan & Prestasi';
-    lines.push(`## ${title}`);
-    cv.honors.forEach((h) => {
-      lines.push(`- **${h.title}**${h.issuer ? ` — ${h.issuer}` : ''}${h.date ? ` (${h.date})` : ''}${h.description ? ` · ${h.description}` : ''}`);
-    });
-    lines.push('');
+    } else {
+      const cs = cv.customSections?.find((s) => s.id === id);
+      if (cs && cs.visible !== false) {
+        const title = cs.title || 'Section Kustom';
+        if (cs.type === 'bullets' && cs.bullets && cs.bullets.filter(Boolean).length) {
+          lines.push(`## ${title}`);
+          cs.bullets.filter(Boolean).forEach((b) => lines.push(`- ${b}`));
+          lines.push('');
+        } else if (cs.type === 'text' && cs.text && cs.text.trim()) {
+          lines.push(`## ${title}`);
+          lines.push(cs.text.trim());
+          lines.push('');
+        } else if (cs.type === 'items' && cs.items && cs.items.length) {
+          lines.push(`## ${title}`);
+          cs.items.forEach((it) => {
+            lines.push(`### ${it.title}${it.subtitle ? ` — ${it.subtitle}` : ''}`);
+            if (it.date) lines.push(`*${it.date}*`);
+            if (it.description) lines.push(it.description);
+            lines.push('');
+          });
+        }
+      }
+    }
   }
 
   return lines.join('\n').trim();

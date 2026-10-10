@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Mail, Phone, MapPin, Globe, Linkedin, Github, ExternalLink,
 } from 'lucide-react';
-import type { CVData, Customization } from '../types/cv';
+import type { CVData, Customization, CustomSection } from '../types/cv';
 import { FONTS } from '../types/cv';
 import { densityTokens } from '../lib/defaults';
 
@@ -153,7 +153,12 @@ function SectionTitle({ children, mono }: { children: string; mono?: boolean }) 
   return (
     <h2
       className={`mb-1.5 text-[12px] font-bold uppercase tracking-wider ${mono ? 'font-mono' : ''}`}
-      style={{ color: 'var(--accent)' }}
+      style={{
+        color: 'var(--accent)',
+        breakAfter: 'avoid',
+        pageBreakAfter: 'avoid',
+        breakInside: 'avoid',
+      }}
     >
       {children}
     </h2>
@@ -163,15 +168,21 @@ function SectionTitle({ children, mono }: { children: string; mono?: boolean }) 
 const dateRange = (a: string, b: string, current: boolean) =>
   [a, current ? 'Present' : b].filter(Boolean).join(' – ');
 
-function Experience({ cv }: { cv: CVData }) {
+function Experience({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   const items = cv.experience.filter((e) => e.visible);
   if (!cv.sectionVisibility.experience || !items.length) return null;
   return (
-    <section id="cv-section-experience" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.experience || 'Experience'}</SectionTitle>
+    <section
+      id="cv-section-experience"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.experience || 'Experience'}</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((e) => (
-          <div key={e.id}>
+          <div key={e.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             <div className="flex items-baseline justify-between">
               <span className="text-[13px] font-semibold">{e.role || 'Role'}{e.company && <span className="font-normal text-slate-600"> · {e.company}</span>}</span>
               <span className="text-[10px] text-slate-500">{dateRange(e.startDate, e.endDate, e.current)}</span>
@@ -187,15 +198,21 @@ function Experience({ cv }: { cv: CVData }) {
   );
 }
 
-function Projects({ cv }: { cv: CVData }) {
+function Projects({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   const items = cv.projects.filter((p) => p.visible);
   if (!cv.sectionVisibility.projects || !items.length) return null;
   return (
-    <section id="cv-section-projects" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.projects || 'Projects'}</SectionTitle>
+    <section
+      id="cv-section-projects"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.projects || 'Projects'}</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((p) => (
-          <div key={p.id}>
+          <div key={p.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             <div className="flex items-baseline gap-2">
               <span className="text-[13px] font-semibold">{p.title || 'Project'}</span>
               {p.link && <span className="inline-flex items-center gap-0.5 text-[10px]" style={{ color: 'var(--accent)' }}><ExternalLink size={9} />{p.link}</span>}
@@ -214,15 +231,21 @@ function Projects({ cv }: { cv: CVData }) {
   );
 }
 
-function Education({ cv }: { cv: CVData }) {
+function Education({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   const items = cv.education.filter((e) => e.visible);
   if (!cv.sectionVisibility.education || !items.length) return null;
   return (
-    <section id="cv-section-education" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.education || 'Education'}</SectionTitle>
+    <section
+      id="cv-section-education"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.education || 'Education'}</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((e) => (
-          <div key={e.id} className="flex items-baseline justify-between">
+          <div key={e.id} className="flex items-baseline justify-between" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             <div>
               <div className="text-[12.5px] font-semibold">{e.degree} {e.field && `· ${e.field}`}</div>
               <div className="text-[11px] text-slate-600">{e.institution}{e.details && ` — ${e.details}`}</div>
@@ -235,40 +258,66 @@ function Education({ cv }: { cv: CVData }) {
   );
 }
 
-function Certifications({ cv }: { cv: CVData }) {
+function Certifications({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   const items = cv.certifications.filter((c) => c.visible);
   if (!cv.sectionVisibility.certifications || !items.length) return null;
   return (
-    <section id="cv-section-certifications" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.certifications || 'Certifications'}</SectionTitle>
+    <section
+      id="cv-section-certifications"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.certifications || 'Certifications'}</SectionTitle>
       <ul className="space-y-0.5 text-[11.5px] text-slate-700">
-        {items.map((c) => <li key={c.id}>{c.name}{c.issuer && ` — ${c.issuer}`}{c.date && ` (${c.date})`}</li>)}
+        {items.map((c) => (
+          <li key={c.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+            {c.name}{c.issuer && ` — ${c.issuer}`}{c.date && ` (${c.date})`}
+          </li>
+        ))}
       </ul>
     </section>
   );
 }
 
-function Honors({ cv }: { cv: CVData }) {
+function Honors({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   const items = cv.honors.filter((h) => h.visible);
   if (!cv.sectionVisibility.honors || !items.length) return null;
   return (
-    <section id="cv-section-honors" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.honors || 'Honors & Achievements'}</SectionTitle>
+    <section
+      id="cv-section-honors"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.honors || 'Honors & Achievements'}</SectionTitle>
       <ul className="space-y-0.5 text-[11.5px] text-slate-700">
-        {items.map((h) => <li key={h.id}><span className="font-medium">{h.title}</span>{h.issuer && ` — ${h.issuer}`}{h.date && ` (${h.date})`}{h.description && <span className="text-slate-600"> · {h.description}</span>}</li>)}
+        {items.map((h) => (
+          <li key={h.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+            <span className="font-medium">{h.title}</span>{h.issuer && ` — ${h.issuer}`}{h.date && ` (${h.date})`}{h.description && <span className="text-slate-600"> · {h.description}</span>}
+          </li>
+        ))}
       </ul>
     </section>
   );
 }
 
-function Skills({ cv }: { cv: CVData }) {
+function Skills({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   if (!cv.sectionVisibility.skills || !cv.skills.length) return null;
   return (
-    <section id="cv-section-skills" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.skills || 'Skills'}</SectionTitle>
+    <section
+      id="cv-section-skills"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.skills || 'Skills'}</SectionTitle>
       <div className="space-y-1">
         {cv.skills.map((g) => (
-          <div key={g.id} className="text-[11.5px]">
+          <div key={g.id} className="text-[11.5px]" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
             {g.category && <span className="font-semibold">{g.category}: </span>}
             <span className="text-slate-700">{g.skills.join(', ')}</span>
           </div>
@@ -278,14 +327,155 @@ function Skills({ cv }: { cv: CVData }) {
   );
 }
 
-function Summary({ cv }: { cv: CVData }) {
+function Summary({ cv, mono, pageBreakBefore }: { cv: CVData; mono?: boolean; pageBreakBefore?: boolean }) {
   if (!cv.sectionVisibility.summary || !cv.summary.trim()) return null;
   return (
-    <section id="cv-section-summary" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>{cv.sectionLabels?.summary || 'Summary'}</SectionTitle>
-      <p className="text-[11.5px] leading-[var(--line)] text-slate-700">{cv.summary}</p>
+    <section
+      id="cv-section-summary"
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{cv.sectionLabels?.summary || 'Summary'}</SectionTitle>
+      <p className="text-[11.5px] leading-[var(--line)] text-slate-700" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+        {cv.summary}
+      </p>
     </section>
   );
+}
+
+function RenderCustomSection({
+  section,
+  mono,
+  pageBreakBefore,
+}: {
+  section: CustomSection;
+  mono?: boolean;
+  serif?: boolean;
+  pageBreakBefore?: boolean;
+}) {
+  if (section.visible === false) return null;
+  const hasContent =
+    (section.type === 'bullets' && section.bullets && section.bullets.filter(Boolean).length > 0) ||
+    (section.type === 'text' && section.text && section.text.trim().length > 0) ||
+    (section.type === 'items' && section.items && section.items.length > 0);
+
+  if (!hasContent) return null;
+
+  return (
+    <section
+      id={`cv-section-${section.id}`}
+      style={{
+        marginBottom: 'var(--sec)',
+        ...(pageBreakBefore ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
+      }}
+    >
+      <SectionTitle mono={mono}>{section.title || 'Custom Section'}</SectionTitle>
+      {section.type === 'bullets' && (
+        <ul className="list-disc space-y-0.5 pl-4 text-[11.5px] leading-[var(--line)] text-slate-700">
+          {section.bullets?.filter(Boolean).map((b, i) => (
+            <li key={i} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+              {b}
+            </li>
+          ))}
+        </ul>
+      )}
+      {section.type === 'text' && (
+        <p
+          className="text-[11.5px] leading-[var(--line)] text-slate-700 whitespace-pre-line"
+          style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}
+        >
+          {section.text}
+        </p>
+      )}
+      {section.type === 'items' && (
+        <div className="space-y-[var(--gap)]">
+          {section.items?.map((it) => (
+            <div key={it.id} style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+              <div className="flex items-baseline justify-between">
+                <span className="text-[12.5px] font-semibold">
+                  {it.title || 'Item'}
+                  {it.subtitle && <span className="font-normal text-slate-600"> · {it.subtitle}</span>}
+                </span>
+                {it.date && <span className="text-[10px] text-slate-500">{it.date}</span>}
+              </div>
+              {it.description && (
+                <p className="mt-0.5 text-[11.5px] leading-[var(--line)] text-slate-700">
+                  {it.description}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// Default orders matching pre-Tahap F behavior exactly
+export const DEFAULT_ORDER_MODERN = ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'honors'];
+export const DEFAULT_ORDER_TECH = ['summary', 'experience', 'projects', 'skills', 'education', 'certifications', 'honors'];
+export const DEFAULT_ORDER_CREATIVE = ['summary', 'experience', 'projects', 'education', 'certifications', 'honors'];
+export const DEFAULT_ORDER_CLASSIC = ['summary', 'experience', 'projects', 'education', 'skills', 'certifications', 'honors'];
+
+export function getEffectiveSectionOrder(cv: CVData, defaultOrder: string[]): string[] {
+  const customIds = (cv.customSections || []).map((s) => s.id);
+  const baseOrder = cv.sectionOrder && cv.sectionOrder.length > 0 ? cv.sectionOrder : defaultOrder;
+
+  const order: string[] = [];
+  for (const id of baseOrder) {
+    if (!order.includes(id)) {
+      order.push(id);
+    }
+  }
+  for (const cid of customIds) {
+    if (!order.includes(cid)) {
+      order.push(cid);
+    }
+  }
+  for (const defId of defaultOrder) {
+    if (!order.includes(defId)) {
+      order.push(defId);
+    }
+  }
+  return order;
+}
+
+function renderSectionById(id: string, cv: CVData, mono?: boolean, serif?: boolean) {
+  const customSec = cv.customSections?.find((s) => s.id === id);
+  const isPageBreak = !!cv.pageBreakSections?.[id] || !!customSec?.pageBreakBefore;
+
+  if (customSec) {
+    return (
+      <RenderCustomSection
+        key={customSec.id}
+        section={customSec}
+        mono={mono}
+        serif={serif}
+        pageBreakBefore={isPageBreak}
+      />
+    );
+  }
+
+  switch (id) {
+    case 'summary':
+      return <Summary key="summary" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    case 'experience':
+      return <Experience key="experience" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    case 'projects':
+      return <Projects key="projects" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    case 'skills':
+      return <Skills key="skills" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    case 'education':
+      return <Education key="education" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    case 'certifications':
+      return <Certifications key="certifications" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    case 'honors':
+      return <Honors key="honors" cv={cv} mono={mono} pageBreakBefore={isPageBreak} />;
+    default:
+      return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -295,6 +485,8 @@ type TplProps = { cv: CVData; accent: string };
 
 function ModernTemplate({ cv }: TplProps) {
   const p = cv.personal;
+  const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_MODERN);
+
   return (
     <div className="p-10">
       <header id="cv-section-personal" className="mb-5 flex items-center gap-5 border-b pb-4" style={{ borderColor: 'var(--accent)' }}>
@@ -305,19 +497,15 @@ function ModernTemplate({ cv }: TplProps) {
           <div className="mt-2"><Contact cv={cv} /></div>
         </div>
       </header>
-      <Summary cv={cv} />
-      <Experience cv={cv} />
-      <Projects cv={cv} />
-      <Skills cv={cv} />
-      <Education cv={cv} />
-      <Certifications cv={cv} />
-      <Honors cv={cv} />
+      {orderedIds.map((id) => renderSectionById(id, cv))}
     </div>
   );
 }
 
 function TechTemplate({ cv }: TplProps) {
   const p = cv.personal;
+  const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_TECH);
+
   return (
     <div className="p-10 font-mono">
       <header id="cv-section-personal" className="mb-4">
@@ -326,19 +514,17 @@ function TechTemplate({ cv }: TplProps) {
         <div className="mt-2"><Contact cv={cv} mono /></div>
         <div className="mt-3 h-px w-full" style={{ background: 'var(--accent)' }} />
       </header>
-      <Summary cv={cv} />
-      <Experience cv={cv} />
-      <Projects cv={cv} />
-      <Skills cv={cv} />
-      <Education cv={cv} />
-      <Certifications cv={cv} />
-      <Honors cv={cv} />
+      {orderedIds.map((id) => renderSectionById(id, cv, true))}
     </div>
   );
 }
 
 function CreativeTemplate({ cv }: TplProps) {
   const p = cv.personal;
+  // In Creative, sidebar holds personal + skills.
+  // Main pane renders ordered content sections (excluding skills).
+  const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_CREATIVE).filter((id) => id !== 'skills');
+
   return (
     <div className="flex min-h-full">
       {/* Sidebar */}
@@ -374,12 +560,7 @@ function CreativeTemplate({ cv }: TplProps) {
       </aside>
       {/* Main */}
       <div className="flex-1 p-7">
-        <Summary cv={cv} />
-        <Experience cv={cv} />
-        <Projects cv={cv} />
-        <Education cv={cv} />
-        <Certifications cv={cv} />
-        <Honors cv={cv} />
+        {orderedIds.map((id) => renderSectionById(id, cv))}
       </div>
     </div>
   );
@@ -387,6 +568,8 @@ function CreativeTemplate({ cv }: TplProps) {
 
 function ClassicTemplate({ cv }: TplProps) {
   const p = cv.personal;
+  const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_CLASSIC);
+
   return (
     <div className="p-12" style={{ fontFamily: 'Georgia, serif' }}>
       <header id="cv-section-personal" className="mb-5 text-center">
@@ -394,13 +577,7 @@ function ClassicTemplate({ cv }: TplProps) {
         <p className="text-[13px] italic text-slate-700">{p.title || 'Your professional title'}</p>
         <div className="mt-2 flex justify-center"><Contact cv={cv} /></div>
       </header>
-      <Summary cv={cv} />
-      <Experience cv={cv} />
-      <Projects cv={cv} />
-      <Education cv={cv} />
-      <Skills cv={cv} />
-      <Certifications cv={cv} />
-      <Honors cv={cv} />
+      {orderedIds.map((id) => renderSectionById(id, cv, false, true))}
     </div>
   );
 }
