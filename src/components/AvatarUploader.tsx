@@ -104,16 +104,16 @@ export function AvatarUploader({
             className="btn btn-outline min-h-[40px] flex-1 rounded-pill text-sm hover:border-[var(--primary)] active:scale-[0.95]"
             onClick={() => fileRef.current?.click()}
           >
-            <Upload size={15} />
+            <Upload size={16} />
             <span>{personal.avatar ? 'Replace image' : 'Upload image'}</span>
           </button>
           {personal.avatar && (
             <button
               type="button"
-              className="btn min-h-[40px] rounded-pill text-sm text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
+              className="btn min-h-[40px] rounded-pill text-sm text-[var(--status-danger)] transition duration-fast ease-standard hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
               onClick={() => onChange({ avatar: '' })}
             >
-              <Trash2 size={15} />
+              <Trash2 size={16} />
               <span>Remove</span>
             </button>
           )}

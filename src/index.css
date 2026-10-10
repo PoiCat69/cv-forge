@@ -37,6 +37,14 @@
   --primary: #0066cc;
   --primary-focus: #0071e3;
   --ring: #0066cc;
+
+  /* Status Tokens Workspace (Apple System Colors) */
+  --status-danger: #d70015;
+  --status-danger-bg: rgba(215, 0, 21, 0.08);
+  --status-warning: #b25000;
+  --status-warning-bg: rgba(178, 80, 0, 0.08);
+  --status-success: #1a7f37;
+  --status-success-bg: rgba(26, 127, 55, 0.08);
 }
 
 .dark {
@@ -71,6 +79,14 @@
   --primary: #2997ff;
   --primary-focus: #0071e3;
   --ring: #2997ff;
+
+  /* Status Tokens Workspace (Dark Mode) */
+  --status-danger: #ff453a;
+  --status-danger-bg: rgba(255, 69, 58, 0.15);
+  --status-warning: #ff9f0a;
+  --status-warning-bg: rgba(255, 159, 10, 0.15);
+  --status-success: #30d158;
+  --status-success-bg: rgba(48, 209, 88, 0.15);
 }
 
 html,
@@ -100,6 +116,24 @@ body {
   }
   .app-muted {
     color: var(--text-muted);
+  }
+  .text-danger {
+    color: var(--status-danger);
+  }
+  .bg-danger {
+    background-color: var(--status-danger-bg);
+  }
+  .text-warning {
+    color: var(--status-warning);
+  }
+  .bg-warning {
+    background-color: var(--status-warning-bg);
+  }
+  .text-success {
+    color: var(--status-success);
+  }
+  .bg-success {
+    background-color: var(--status-success-bg);
   }
   /* Input satu baris: tinggi 40-44px, radius 8px, border hairline, isi 15-16px */
   .app-input {

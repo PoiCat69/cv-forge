@@ -94,7 +94,7 @@ export function TagInput({
               aria-label={`Remove ${v}`}
               className="grid h-4 w-4 place-items-center rounded-pill opacity-70 transition duration-fast ease-standard hover:opacity-100 active:scale-[0.95]"
             >
-              <X size={11} />
+              <X size={14} />
             </button>
           </span>
         ))}
@@ -132,8 +132,8 @@ export function TagInput({
       </div>
 
       {showSuggestions && draft.trim() && matchingSuggestions.length > 0 && (
-        <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-control border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-sm">
-          <div className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)]">Saran Skill:</div>
+        <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-control border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-none">
+          <div className="px-2 py-1 text-xs font-normal text-[var(--text-muted)]">Saran Skill:</div>
           {matchingSuggestions.map((item) => (
             <button
               key={item}
@@ -145,7 +145,7 @@ export function TagInput({
               className="flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-left text-xs text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
             >
               <span>{item}</span>
-              <Plus size={12} className="opacity-60" />
+              <Plus size={14} className="opacity-60" />
             </button>
           ))}
         </div>
@@ -211,7 +211,7 @@ export function DateInput({
       </div>
 
       {open && (
-        <div className="absolute right-0 z-30 mt-1 w-64 rounded-card border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm">
+        <div className="absolute right-0 z-30 mt-1 w-64 rounded-card border border-[var(--border)] bg-[var(--surface)] p-3 shadow-none">
           <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
             <span className="text-xs font-semibold text-[var(--text)]">Pilih Bulan & Tahun</span>
             <button
@@ -231,7 +231,7 @@ export function DateInput({
                   onChange('Sekarang');
                   setOpen(false);
                 }}
-                className="w-full rounded-control border border-[var(--primary)] bg-[var(--primary)]/10 py-1 text-center text-xs font-medium text-[var(--primary)] transition duration-fast hover:bg-[var(--primary)]/20 active:scale-[0.98]"
+                className="w-full rounded-control border border-[var(--primary)] bg-[var(--primary)]/10 py-1 text-center text-xs font-normal text-[var(--primary)] transition duration-fast hover:bg-[var(--primary)]/20 active:scale-[0.98]"
               >
                 ⚡ Sekarang / Present
               </button>
@@ -239,7 +239,7 @@ export function DateInput({
           )}
 
           <div className="mb-2">
-            <div className="mb-1 text-[11px] font-medium text-[var(--text-muted)]">Bulan:</div>
+            <div className="mb-1 text-xs font-normal text-[var(--text-muted)]">Bulan:</div>
             <div className="grid grid-cols-4 gap-1">
               {MONTHS.map((m) => (
                 <button
@@ -262,7 +262,7 @@ export function DateInput({
           </div>
 
           <div>
-            <div className="mb-1 text-[11px] font-medium text-[var(--text-muted)]">Tahun:</div>
+            <div className="mb-1 text-xs font-normal text-[var(--text-muted)]">Tahun:</div>
             <div className="grid grid-cols-4 gap-1">
               {YEARS.map((y) => (
                 <button
@@ -447,7 +447,7 @@ export function AccordionSection({
               }}
               title={`Hapus section ${title}`}
               aria-label={`Hapus section ${title}`}
-              className="grid h-8 w-8 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 active:scale-[0.95]"
+              className="grid h-8 w-8 place-items-center rounded-control text-[var(--status-danger)] transition duration-fast ease-standard hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
             >
               <Trash2 size={14} />
             </button>
@@ -484,7 +484,7 @@ export function AccordionSection({
                 <span className="text-sm">📄</span>
                 <div>
                   <span className="font-semibold">Mulai di halaman baru</span>
-                  <p className="text-[11px] text-[var(--text-muted)]">
+                  <p className="text-xs text-[var(--text-muted)]">
                     Sisipkan pemisah halaman otomatis sebelum section ini (Page Break)
                   </p>
                 </div>

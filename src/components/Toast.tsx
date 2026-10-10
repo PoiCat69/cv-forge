@@ -31,7 +31,7 @@ export function Toast({
     <div
       role="status"
       aria-live="polite"
-      className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-card border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] shadow-lg backdrop-blur-md animate-modal-enter"
+      className="fixed bottom-5 right-5 z-50 flex items-center gap-3 rounded-card border border-[var(--border)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--text)] shadow-none backdrop-blur-md animate-modal-enter"
       style={{
         background: 'color-mix(in srgb, var(--surface) 95%, transparent)',
       }}
@@ -46,7 +46,7 @@ export function Toast({
           }}
           className="btn btn-outline flex items-center gap-1.5 rounded-pill border-[var(--primary)] px-3 py-1 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--surface-pearl)] active:scale-[0.95]"
         >
-          <RotateCcw size={12} />
+          <RotateCcw size={14} />
           <span>{toast.undoLabel || 'Urungkan'}</span>
         </button>
       )}

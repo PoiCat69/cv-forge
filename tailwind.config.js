@@ -26,6 +26,14 @@ export default {
           'tile-3': '#252527',
           'chip-translucent': 'rgba(210, 210, 215, 0.64)',
         },
+        status: {
+          danger: 'var(--status-danger)',
+          'danger-bg': 'var(--status-danger-bg)',
+          warning: 'var(--status-warning)',
+          'warning-bg': 'var(--status-warning-bg)',
+          success: 'var(--status-success)',
+          'success-bg': 'var(--status-success-bg)',
+        },
       },
       borderRadius: {
         none: '0px',
