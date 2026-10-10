@@ -114,23 +114,76 @@ export function FormBuilder({
   setCV,
   accent,
   onDeleteToast,
+  onActiveSectionChange,
 }: {
   cv: CVData;
   setCV: SetCV;
   accent: string;
   onDeleteToast?: (msg: string) => void;
+  onActiveSectionChange?: (section: string) => void;
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({ personal: true, summary: true });
-  const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
+  const [open, setOpen] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem('cvforge.accordion.v1');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { personal: true, summary: true, experience: true, projects: true, education: true, skills: true, honors: true };
+  });
+
+  const toggle = (k: string) => {
+    setOpen((o) => {
+      const next = { ...o, [k]: !o[k] };
+      try {
+        localStorage.setItem('cvforge.accordion.v1', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    onActiveSectionChange?.(k);
+  };
+
+  const expandAll = () => {
+    const next = { personal: true, summary: true, experience: true, projects: true, education: true, skills: true, honors: true };
+    setOpen(next);
+    try { localStorage.setItem('cvforge.accordion.v1', JSON.stringify(next)); } catch {}
+  };
+
+  const collapseAll = () => {
+    const next = { personal: false, summary: false, experience: false, projects: false, education: false, skills: false, honors: false };
+    setOpen(next);
+    try { localStorage.setItem('cvforge.accordion.v1', JSON.stringify(next)); } catch {}
+  };
+
   const vis = cv.sectionVisibility;
   const setVis = (k: keyof typeof vis, v: boolean) =>
     setCV((c) => ({ ...c, sectionVisibility: { ...c.sectionVisibility, [k]: v } }));
 
   return (
     <div className="space-y-6">
+      {/* Top Accordion Controls */}
+      <div className="flex items-center justify-between pb-1">
+        <span className="text-xs font-medium text-[var(--text-muted)]">Formulir Riwayat Hidup</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={expandAll}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] active:scale-[0.95]"
+          >
+            Buka Semua
+          </button>
+          <span className="text-xs text-[var(--border)]">|</span>
+          <button
+            type="button"
+            onClick={collapseAll}
+            className="text-xs text-[var(--text-muted)] hover:text-[var(--primary)] active:scale-[0.95]"
+          >
+            Tutup Semua
+          </button>
+        </div>
+      </div>
+
       {/* 1. Personal + avatar ------------------------------------------------ */}
       <AccordionSection title="Personal Info & Avatar" icon={<User size={18} />} open={!!open.personal} onToggle={() => toggle('personal')}>
-        <div className="space-y-4">
+        <div className="space-y-4" onFocus={() => onActiveSectionChange?.('personal')}>
           <AvatarUploader
             personal={cv.personal}
             onChange={(patch) => setCV((c) => ({ ...c, personal: { ...c.personal, ...patch } }))}
@@ -150,7 +203,7 @@ export function FormBuilder({
 
       {/* 2. Summary ---------------------------------------------------------- */}
       <AccordionSection title="Professional Summary" icon={<FileText size={18} />} open={!!open.summary} onToggle={() => toggle('summary')} visible={vis.summary} onVisibleChange={(v) => setVis('summary', v)}>
-        <div className="space-y-3">
+        <div className="space-y-3" onFocus={() => onActiveSectionChange?.('summary')}>
           <Field label="Professional summary" hint="3-4 sentences highlighting impact, domain expertise, and career trajectory">
             <textarea
               className="app-textarea min-h-[96px]"
@@ -171,7 +224,7 @@ export function FormBuilder({
 
       {/* 3. Experience ------------------------------------------------------ */}
       <AccordionSection title="Work & Leadership Experience" icon={<Briefcase size={18} />} open={!!open.experience} onToggle={() => toggle('experience')} visible={vis.experience} onVisibleChange={(v) => setVis('experience', v)}>
-        <div className="space-y-4">
+        <div className="space-y-4" onFocus={() => onActiveSectionChange?.('experience')}>
           {cv.experience.map((item, i) => (
             <ExperienceEditor
               key={item.id}
@@ -195,7 +248,7 @@ export function FormBuilder({
 
       {/* 4. Projects -------------------------------------------------------- */}
       <AccordionSection title="Selected Projects" icon={<FolderGit2 size={18} />} open={!!open.projects} onToggle={() => toggle('projects')} visible={vis.projects} onVisibleChange={(v) => setVis('projects', v)}>
-        <div className="space-y-4">
+        <div className="space-y-4" onFocus={() => onActiveSectionChange?.('projects')}>
           {cv.projects.map((item, i) => (
             <ProjectEditor
               key={item.id}
@@ -220,7 +273,7 @@ export function FormBuilder({
 
       {/* 5. Education + Certs ---------------------------------------------- */}
       <AccordionSection title="Education & Certifications" icon={<GraduationCap size={18} />} open={!!open.education} onToggle={() => toggle('education')} visible={vis.education} onVisibleChange={(v) => setVis('education', v)}>
-        <div className="space-y-4">
+        <div className="space-y-4" onFocus={() => onActiveSectionChange?.('education')}>
           {cv.education.map((item, i) => (
             <EducationEditor
               key={item.id}
@@ -286,7 +339,7 @@ export function FormBuilder({
 
       {/* 6. Skills ---------------------------------------------------------- */}
       <AccordionSection title="Technical & Soft Skills" icon={<Wrench size={18} />} open={!!open.skills} onToggle={() => toggle('skills')} visible={vis.skills} onVisibleChange={(v) => setVis('skills', v)}>
-        <div className="space-y-4">
+        <div className="space-y-4" onFocus={() => onActiveSectionChange?.('skills')}>
           {cv.skills.map((grp, i) => (
             <div
               key={grp.id}
@@ -330,7 +383,7 @@ export function FormBuilder({
 
       {/* 7. Honors ---------------------------------------------------------- */}
       <AccordionSection title="Honors & Achievements" icon={<Award size={18} />} open={!!open.honors} onToggle={() => toggle('honors')} visible={vis.honors} onVisibleChange={(v) => setVis('honors', v)}>
-        <div className="space-y-4">
+        <div className="space-y-4" onFocus={() => onActiveSectionChange?.('honors')}>
           {cv.honors.map((item, i) => (
             <div
               key={item.id}

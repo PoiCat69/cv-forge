@@ -3,27 +3,43 @@ import { createPortal } from 'react-dom';
 import {
   FileText, Moon, Sun, Download, FileJson, Upload, Printer,
   RotateCcw, ZoomIn, ZoomOut, Sliders, PanelLeftClose, PanelLeft,
-  Undo2, Redo2, Check, AlertCircle,
+  Undo2, Redo2, Check, AlertCircle, Layers, ChevronDown, HelpCircle,
+  Maximize2, Minimize2,
 } from 'lucide-react';
 import type { AppState, Customization, CVData } from './types/cv';
 import { defaultState, emptyCV, defaultCustomization } from './lib/defaults';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useCVHistory } from './hooks/useCVHistory';
+import { useCVVersions } from './hooks/useCVVersions';
 import { useTheme } from './hooks/useTheme';
 import { FormBuilder } from './components/FormBuilder';
-import { CVPreview, A4_W } from './components/CVPreview';
+import { CVPreview, A4_W, A4_H } from './components/CVPreview';
 import { Customizer } from './components/Customizer';
-import { exportPdf, printCV, downloadJson, parseImport, generatePdfFileName } from './lib/export';
+import { exportPdf, printCV, downloadJson, validateAndParseImport, generatePdfFileName } from './lib/export';
 import { Toast, type ToastData } from './components/Toast';
+import { VersionManagerModal } from './components/VersionManagerModal';
+import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 
 const STORAGE_KEY = 'cvforge.state.v1';
 
 export default function App() {
   const [state, setState, { saveStatus, errorMessage }] = useLocalStorage<AppState>(STORAGE_KEY, defaultState);
   const { undo, redo, canUndo, canRedo, commitSnapshot } = useCVHistory(state, setState);
+  const {
+    versions,
+    activeVersion,
+    switchVersion,
+    createVersion,
+    duplicateVersion,
+    renameVersion,
+    deleteVersion,
+  } = useCVVersions(state, setState);
+
   const { theme, toggle } = useTheme();
   const [showForm, setShowForm] = useState(true);
   const [showCustomizer, setShowCustomizer] = useState(false);
+  const [showVersionsModal, setShowVersionsModal] = useState(false);
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [zoom, setZoom] = useState(0.72);
   const [pageCount, setPageCount] = useState(1);
   const [exporting, setExporting] = useState(false);
@@ -40,7 +56,21 @@ export default function App() {
     [setState],
   );
 
-  // Fit-to-width zoom on resize of the canvas column.
+  const fitWidth = useCallback(() => {
+    const el = canvasWrapRef.current;
+    if (!el) return;
+    const avail = el.clientWidth - 48;
+    setZoom(Math.min(1.2, Math.max(0.35, avail / A4_W)));
+  }, []);
+
+  const fitPage = useCallback(() => {
+    const el = canvasWrapRef.current;
+    if (!el) return;
+    const availH = el.clientHeight - 80;
+    setZoom(Math.min(1.2, Math.max(0.35, availH / A4_H)));
+  }, []);
+
+  // Fit-to-width zoom on initial resize of the canvas column.
   useEffect(() => {
     const el = canvasWrapRef.current;
     if (!el) return;
@@ -52,19 +82,26 @@ export default function App() {
     return () => ro.disconnect();
   }, []);
 
+  const handleActiveSectionChange = useCallback((sectionKey: string) => {
+    const el = canvasWrapRef.current?.querySelector(`#cv-section-${sectionKey}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, []);
+
   const handleImport = (file?: File) => {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      const parsed = parseImport(String(reader.result));
-      if (!parsed) {
-        alert('File JSON tidak valid atau format salah.');
+      const result = validateAndParseImport(String(reader.result));
+      if (!result.ok || !result.data) {
+        alert(result.error || 'File JSON tidak valid.');
         return;
       }
       commitSnapshot();
       setState((s) => ({
-        cv: parsed.cv ?? s.cv,
-        customization: parsed.customization ?? s.customization,
+        cv: result.data!.cv ?? s.cv,
+        customization: result.data!.customization ?? s.customization,
       }));
       setToast({
         id: String(Date.now()),
@@ -75,7 +112,7 @@ export default function App() {
     reader.readAsText(file);
   };
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = useCallback(async () => {
     setExporting(true);
     try {
       const pdfBaseName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
@@ -83,7 +120,26 @@ export default function App() {
     } finally {
       setExporting(false);
     }
-  };
+  }, [state.cv.personal]);
+
+  // Global Keyboard Shortcuts (Ctrl+/, Ctrl+S, Esc)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        setShowShortcutsModal((v) => !v);
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        handleExportPdf();
+      } else if (e.key === 'Escape') {
+        setShowShortcutsModal(false);
+        setShowVersionsModal(false);
+        setShowCustomizer(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleExportPdf]);
 
   const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
 
@@ -129,6 +185,18 @@ export default function App() {
             </div>
             <p className="mt-0.5 text-xs tracking-[-0.12px] text-[var(--text-muted)]">Real-time CV builder</p>
           </div>
+
+          {/* Version Selector Pill */}
+          <button
+            type="button"
+            onClick={() => setShowVersionsModal(true)}
+            title="Kelola & ganti versi CV"
+            className="hidden sm:flex items-center gap-1.5 rounded-pill border border-[var(--border)] bg-[var(--surface-pearl)] px-2.5 py-1 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:border-[var(--primary)] active:scale-[0.95]"
+          >
+            <Layers size={13} className="text-[var(--primary)]" />
+            <span className="max-w-[110px] truncate">{activeVersion.name}</span>
+            <ChevronDown size={11} className="text-[var(--text-muted)]" />
+          </button>
 
           {/* Undo / Redo buttons */}
           <div className="ml-2 hidden items-center gap-0.5 rounded-control border border-[var(--border)] p-0.5 md:flex">
@@ -263,6 +331,17 @@ export default function App() {
             <span>{exporting ? 'Exporting…' : 'PDF'}</span>
           </button>
 
+          {/* Shortcuts Help Button */}
+          <button
+            type="button"
+            className="btn btn-ghost grid h-10 w-10 place-items-center rounded-control p-0 text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
+            onClick={() => setShowShortcutsModal(true)}
+            title="Pintasan keyboard (Ctrl+/)"
+            aria-label="Pintasan keyboard"
+          >
+            <HelpCircle size={16} />
+          </button>
+
           {/* Theme Toggle */}
           <button
             type="button"
@@ -288,6 +367,7 @@ export default function App() {
               cv={state.cv}
               setCV={setCV}
               accent={state.customization.accent}
+              onActiveSectionChange={handleActiveSectionChange}
               onDeleteToast={(msg) => {
                 commitSnapshot();
                 setToast({
@@ -340,23 +420,47 @@ export default function App() {
               <button
                 type="button"
                 className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:scale-[0.95]"
-                onClick={() => setZoom((z) => Math.max(0.4, z - 0.08))}
+                onClick={() => setZoom((z) => Math.max(0.35, z - 0.08))}
                 aria-label="Zoom out"
-                title="Zoom out"
+                title="Perkecil"
               >
-                <ZoomOut size={14} />
+                <ZoomOut size={13} />
               </button>
-              <span className="w-11 text-center text-xs font-medium tracking-[-0.12px] text-[var(--text-muted)]">
+              <button
+                type="button"
+                onClick={() => setZoom(1.0)}
+                title="Klik untuk reset ke 100%"
+                className="w-11 text-center text-xs font-medium tracking-[-0.12px] text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
+              >
                 {Math.round(zoom * 100)}%
-              </span>
+              </button>
               <button
                 type="button"
                 className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:scale-[0.95]"
-                onClick={() => setZoom((z) => Math.min(1.2, z + 0.08))}
+                onClick={() => setZoom((z) => Math.min(1.25, z + 0.08))}
                 aria-label="Zoom in"
-                title="Zoom in"
+                title="Perbesar"
               >
-                <ZoomIn size={14} />
+                <ZoomIn size={13} />
+              </button>
+              <span className="h-3 w-px bg-[var(--border)] mx-0.5" />
+              <button
+                type="button"
+                className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:scale-[0.95]"
+                onClick={fitWidth}
+                aria-label="Pas lebar layar"
+                title="Pas lebar layar (Fit Width)"
+              >
+                <Maximize2 size={13} />
+              </button>
+              <button
+                type="button"
+                className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:scale-[0.95]"
+                onClick={fitPage}
+                aria-label="Pas 1 halaman"
+                title="Pas 1 halaman penuh (Fit Page)"
+              >
+                <Minimize2 size={13} />
               </button>
             </div>
           </div>
@@ -454,6 +558,25 @@ export default function App() {
 
       {/* Floating Toast Notification */}
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+
+      {/* CV Version Manager Modal */}
+      <VersionManagerModal
+        isOpen={showVersionsModal}
+        onClose={() => setShowVersionsModal(false)}
+        versions={versions}
+        activeVersion={activeVersion}
+        onSwitch={switchVersion}
+        onCreate={createVersion}
+        onDuplicate={duplicateVersion}
+        onRename={renameVersion}
+        onDelete={deleteVersion}
+      />
+
+      {/* Keyboard Shortcuts Cheat Sheet Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsModal}
+        onClose={() => setShowShortcutsModal(false)}
+      />
 
       {/* ---------------- 4. Hidden print/export copy ---------------- */}
       {typeof document !== 'undefined' &&

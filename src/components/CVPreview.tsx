@@ -153,7 +153,7 @@ function Experience({ cv }: { cv: CVData }) {
   const items = cv.experience.filter((e) => e.visible);
   if (!cv.sectionVisibility.experience || !items.length) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-experience" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Experience</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((e) => (
@@ -177,7 +177,7 @@ function Projects({ cv }: { cv: CVData }) {
   const items = cv.projects.filter((p) => p.visible);
   if (!cv.sectionVisibility.projects || !items.length) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-projects" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Projects</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((p) => (
@@ -204,7 +204,7 @@ function Education({ cv }: { cv: CVData }) {
   const items = cv.education.filter((e) => e.visible);
   if (!cv.sectionVisibility.education || !items.length) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-education" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Education</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((e) => (
@@ -225,7 +225,7 @@ function Certifications({ cv }: { cv: CVData }) {
   const items = cv.certifications.filter((c) => c.visible);
   if (!cv.sectionVisibility.certifications || !items.length) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-certifications" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Certifications</SectionTitle>
       <ul className="space-y-0.5 text-[11.5px] text-slate-700">
         {items.map((c) => <li key={c.id}>{c.name}{c.issuer && ` — ${c.issuer}`}{c.date && ` (${c.date})`}</li>)}
@@ -238,7 +238,7 @@ function Honors({ cv }: { cv: CVData }) {
   const items = cv.honors.filter((h) => h.visible);
   if (!cv.sectionVisibility.honors || !items.length) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-honors" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Honors & Achievements</SectionTitle>
       <ul className="space-y-0.5 text-[11.5px] text-slate-700">
         {items.map((h) => <li key={h.id}><span className="font-medium">{h.title}</span>{h.issuer && ` — ${h.issuer}`}{h.date && ` (${h.date})`}{h.description && <span className="text-slate-600"> · {h.description}</span>}</li>)}
@@ -250,7 +250,7 @@ function Honors({ cv }: { cv: CVData }) {
 function Skills({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.skills || !cv.skills.length) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-skills" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Skills</SectionTitle>
       <div className="space-y-1">
         {cv.skills.map((g) => (
@@ -267,7 +267,7 @@ function Skills({ cv }: { cv: CVData }) {
 function Summary({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.summary || !cv.summary.trim()) return null;
   return (
-    <section style={{ marginBottom: 'var(--sec)' }}>
+    <section id="cv-section-summary" style={{ marginBottom: 'var(--sec)' }}>
       <SectionTitle>Summary</SectionTitle>
       <p className="text-[11.5px] leading-[var(--line)] text-slate-700">{cv.summary}</p>
     </section>
@@ -283,7 +283,7 @@ function ModernTemplate({ cv }: TplProps) {
   const p = cv.personal;
   return (
     <div className="p-10">
-      <header className="mb-5 flex items-center gap-5 border-b pb-4" style={{ borderColor: 'var(--accent)' }}>
+      <header id="cv-section-personal" className="mb-5 flex items-center gap-5 border-b pb-4" style={{ borderColor: 'var(--accent)' }}>
         <Avatar cv={cv} />
         <div>
           <h1 className="text-[26px] font-extrabold leading-tight">{p.fullName || 'Your Name'}</h1>
@@ -306,7 +306,7 @@ function TechTemplate({ cv }: TplProps) {
   const p = cv.personal;
   return (
     <div className="p-10 font-mono">
-      <header className="mb-4">
+      <header id="cv-section-personal" className="mb-4">
         <h1 className="text-[24px] font-bold">{p.fullName || 'Your Name'}</h1>
         <p className="text-[12px]" style={{ color: 'var(--accent)' }}>{p.title || 'Your professional title'}</p>
         <div className="mt-2"><Contact cv={cv} mono /></div>
@@ -328,7 +328,7 @@ function CreativeTemplate({ cv }: TplProps) {
   return (
     <div className="flex min-h-full">
       {/* Sidebar */}
-      <aside className="w-[34%] p-6 text-white" style={{ background: 'var(--accent)' }}>
+      <aside id="cv-section-personal" className="w-[34%] p-6 text-white" style={{ background: 'var(--accent)' }}>
         <div className="flex flex-col items-center text-center">
           {p.showAvatar && p.avatar && (
             <div className="mb-3 h-28 w-28 overflow-hidden rounded-full border-4 border-white/40">
@@ -375,7 +375,7 @@ function ClassicTemplate({ cv }: TplProps) {
   const p = cv.personal;
   return (
     <div className="p-12" style={{ fontFamily: 'Georgia, serif' }}>
-      <header className="mb-5 text-center">
+      <header id="cv-section-personal" className="mb-5 text-center">
         <h1 className="text-[26px] font-bold">{p.fullName || 'Your Name'}</h1>
         <p className="text-[13px] italic text-slate-700">{p.title || 'Your professional title'}</p>
         <div className="mt-2 flex justify-center"><Contact cv={cv} /></div>

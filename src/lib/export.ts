@@ -1,4 +1,4 @@
-import type { AppState, CVData, PersonalInfo } from '../types/cv';
+import type { AppState, CVData, PersonalInfo, Customization } from '../types/cv';
 
 /** Generates clean, automated PDF filename from name and title. */
 export function generatePdfFileName(personal?: Partial<PersonalInfo>): string {
@@ -60,16 +60,75 @@ export function downloadJson(state: AppState, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
+export interface ImportValidationResult {
+  ok: boolean;
+  data?: Partial<AppState>;
+  error?: string;
+}
+
+/**
+ * Validate and parse an imported JSON file with clear, descriptive error messages.
+ * Accepts versioned format (version: 1), full AppState, or legacy bare CVData.
+ */
+export function validateAndParseImport(text: string): ImportValidationResult {
+  if (!text || !text.trim()) {
+    return { ok: false, error: 'File kosong atau tidak dapat dibaca.' };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    return {
+      ok: false,
+      error: `Format JSON rusak: ${err instanceof Error ? err.message : 'Kesalahan sintaks JSON'}. Periksa tanda kurung atau koma.`,
+    };
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return {
+      ok: false,
+      error: 'Struktur data tidak valid: Root dokumen harus berupa objek JSON { ... }.',
+    };
+  }
+
+  const obj = parsed as Record<string, unknown>;
+
+  // Case 1: Standard AppState with 'cv' property
+  if ('cv' in obj && typeof obj.cv === 'object' && obj.cv !== null) {
+    const cvObj = obj.cv as Record<string, unknown>;
+    if (!('personal' in cvObj)) {
+      return {
+        ok: false,
+        error: 'Objek "cv" ditemukan tetapi tidak memiliki field "personal" yang valid.',
+      };
+    }
+    return {
+      ok: true,
+      data: {
+        cv: obj.cv as CVData,
+        customization: (obj.customization as Customization) || undefined,
+      },
+    };
+  }
+
+  // Case 2: Legacy flat CVData with 'personal' property at root
+  if ('personal' in obj && typeof obj.personal === 'object' && obj.personal !== null) {
+    return {
+      ok: true,
+      data: { cv: obj as unknown as CVData },
+    };
+  }
+
+  return {
+    ok: false,
+    error: 'File JSON ini bukan cadangan CV Forge yang valid (tidak ditemukan field "cv" atau "personal").',
+  };
+}
+
 /** Parse an imported JSON file. Accepts versioned format, full AppState, or legacy bare CVData. */
 export function parseImport(text: string): Partial<AppState> | null {
-  try {
-    const data = JSON.parse(text);
-    if (data && typeof data === 'object') {
-      if ('cv' in data && 'customization' in data) return data as AppState;
-      if ('personal' in data) return { cv: data as CVData };
-    }
-    return null;
-  } catch {
-    return null;
-  }
+  const res = validateAndParseImport(text);
+  return res.ok && res.data ? res.data : null;
 }
+
