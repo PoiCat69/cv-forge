@@ -10,6 +10,7 @@ import { uid } from '../lib/defaults';
 import { polishSummary, suggestBullet } from '../lib/polish';
 import { AccordionSection, Field, TagInput, AddButton, DateInput, DEFAULT_SKILL_SUGGESTIONS } from './ui';
 import { AvatarUploader } from './AvatarUploader';
+import { CVScoreWidget } from './CVScoreWidget';
 
 function formatLink(url: string): string {
   const trimmed = url.trim();
@@ -187,6 +188,15 @@ export function FormBuilder({
           </button>
         </div>
       </div>
+
+      {/* CV Completeness & ATS Heuristics Meter */}
+      <CVScoreWidget
+        cv={cv}
+        onFocusSection={(sec) => {
+          if (!open[sec]) toggle(sec);
+          onActiveSectionChange?.(sec);
+        }}
+      />
 
       {/* 1. Personal + avatar ------------------------------------------------ */}
       <AccordionSection title="Personal Info & Avatar" icon={<User size={18} />} open={!!open.personal} onToggle={() => toggle('personal')}>
