@@ -4,7 +4,7 @@ import {
   FileText, Moon, Sun, Download, FileJson, Upload, Printer,
   RotateCcw, ZoomIn, ZoomOut, Sliders, PanelLeftClose, PanelLeft,
   Undo2, Redo2, Check, AlertCircle, Layers, ChevronDown, HelpCircle,
-  Maximize2, Minimize2,
+  Maximize2, Minimize2, Copy, Image, History, Sparkles, FilePlus, MoreHorizontal,
 } from 'lucide-react';
 import type { AppState, Customization, CVData } from './types/cv';
 import { defaultState, emptyCV, defaultCustomization } from './lib/defaults';
@@ -12,13 +12,18 @@ import { useLocalStorage } from './hooks/useLocalStorage';
 import { useCVHistory } from './hooks/useCVHistory';
 import { useCVVersions } from './hooks/useCVVersions';
 import { useTheme } from './hooks/useTheme';
+import { useCVSnapshots } from './hooks/useCVSnapshots';
 import { FormBuilder } from './components/FormBuilder';
 import { CVPreview, A4_W, A4_H } from './components/CVPreview';
 import { Customizer } from './components/Customizer';
-import { exportPdf, printCV, downloadJson, validateAndParseImport, generatePdfFileName } from './lib/export';
+import {
+  exportPdf, printCV, downloadJson, validateAndParseImport, generatePdfFileName,
+  exportPng, copyPlainText, downloadMarkdown,
+} from './lib/export';
 import { Toast, type ToastData } from './components/Toast';
 import { VersionManagerModal } from './components/VersionManagerModal';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
+import { SnapshotHistoryModal } from './components/SnapshotHistoryModal';
 
 const STORAGE_KEY = 'cvforge.state.v1';
 
@@ -46,8 +51,25 @@ export default function App() {
   const [pageCount, setPageCount] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
+  const [showSnapshotModal, setShowSnapshotModal] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const { snapshots, addSnapshot, deleteSnapshot } = useCVSnapshots(state);
   const importRef = useRef<HTMLInputElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
+        setShowMoreMenu(false);
+      }
+    };
+    if (showMoreMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMoreMenu]);
 
   // Focus Mode toggle via F10 or Escape
   useEffect(() => {
@@ -138,7 +160,45 @@ export default function App() {
     }
   }, [state.cv.personal]);
 
-  // Global Keyboard Shortcuts (Ctrl+/, Ctrl+S, Esc)
+  const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
+
+  const handleCopyText = async () => {
+    const ok = await copyPlainText(state.cv);
+    if (ok) {
+      setToast({ id: String(Date.now()), message: 'CV disalin sebagai teks polos (ATS)' });
+    } else {
+      alert('Gagal menyalin teks ke papan klip.');
+    }
+  };
+
+  const handleExportMarkdown = () => {
+    downloadMarkdown(state.cv, fileName);
+    setToast({ id: String(Date.now()), message: 'CV diekspor sebagai Markdown (.md)' });
+  };
+
+  const handleExportPng = async () => {
+    setExporting(true);
+    try {
+      await exportPng(fileName);
+      setToast({ id: String(Date.now()), message: 'Gambar PNG berhasil diunduh' });
+    } catch {
+      alert('Gagal mengekspor gambar PNG.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleLoadSample = () => {
+    commitSnapshot();
+    setState(defaultState);
+    setToast({ id: String(Date.now()), message: 'Contoh data berhasil dimuat', onUndo: undo });
+  };
+
+  const handleClearBlank = () => {
+    commitSnapshot();
+    setState((s) => ({ ...s, cv: emptyCV }));
+    setToast({ id: String(Date.now()), message: 'Formulir dikosongkan (Mulai kosong)', onUndo: undo });
+  };
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '/') {
@@ -156,8 +216,6 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleExportPdf]);
-
-  const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
 
   return (
     <div className="flex h-screen flex-col overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
@@ -342,12 +400,118 @@ export default function App() {
             type="button"
             className="btn btn-outline rounded-pill px-4 py-1.5 text-sm active:scale-[0.95]"
             onClick={printCV}
-            title="Print"
+            title="Print (Ctrl+P)"
             aria-label="Print"
           >
             <Printer size={14} />
             <span className="hidden md:inline">Print</span>
           </button>
+
+          {/* Copy Plain Text */}
+          <button
+            type="button"
+            className="btn btn-outline rounded-pill px-3 py-1.5 text-sm active:scale-[0.95]"
+            onClick={handleCopyText}
+            title="Salin CV sebagai teks polos (ATS)"
+            aria-label="Salin teks polos"
+          >
+            <Copy size={14} />
+            <span className="hidden xl:inline">Salin Teks</span>
+          </button>
+
+          {/* More Actions Dropdown (PNG, Markdown, Snapshot, Sample, Blank) */}
+          <div ref={moreMenuRef} className="relative">
+            <button
+              type="button"
+              className={`btn btn-outline rounded-pill px-2.5 py-1.5 text-sm active:scale-[0.95] ${
+                showMoreMenu ? 'border-[var(--primary)] text-[var(--primary)]' : ''
+              }`}
+              onClick={() => setShowMoreMenu((v) => !v)}
+              title="Opsi & Ekspor lainnya"
+              aria-label="Opsi lainnya"
+            >
+              <MoreHorizontal size={16} />
+            </button>
+
+            {showMoreMenu && (
+              <div className="absolute right-0 z-30 mt-2 w-56 rounded-card border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-lg animate-dropdown-enter">
+                <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
+                  Format Ekspor Lainnya
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleExportPng();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                >
+                  <Image size={14} />
+                  <span>Unduh Gambar PNG</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleExportMarkdown();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                >
+                  <FileText size={14} />
+                  <span>Unduh Markdown (.md)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleCopyText();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                >
+                  <Copy size={14} />
+                  <span>Salin Teks Polos</span>
+                </button>
+
+                <div className="my-1 border-t border-[var(--border)]" />
+                <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+                  Data & Riwayat
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    setShowSnapshotModal(true);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                >
+                  <History size={14} />
+                  <span>Riwayat Snapshot ({snapshots.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleLoadSample();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                >
+                  <Sparkles size={14} />
+                  <span>Muat Contoh Data</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleClearBlank();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                >
+                  <FilePlus size={14} />
+                  <span>Mulai Kosong</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Primary Action Pill: Export PDF */}
           <button
@@ -663,6 +827,27 @@ export default function App() {
 
       {/* Floating Toast Notification */}
       <Toast toast={toast} onDismiss={() => setToast(null)} />
+
+      {/* Snapshot History Modal (Rolling 10 auto-snapshots) */}
+      <SnapshotHistoryModal
+        isOpen={showSnapshotModal}
+        onClose={() => setShowSnapshotModal(false)}
+        snapshots={snapshots}
+        onRestore={(restoredState) => {
+          commitSnapshot();
+          setState(restoredState);
+          setToast({
+            id: String(Date.now()),
+            message: 'Snapshot berhasil dipulihkan',
+            onUndo: undo,
+          });
+        }}
+        onTakeSnapshot={() => {
+          addSnapshot(state, `Snapshot: ${state.cv.personal.fullName || 'CV'}`);
+          setToast({ id: String(Date.now()), message: 'Snapshot baru disimpan' });
+        }}
+        onDeleteSnapshot={deleteSnapshot}
+      />
 
       {/* CV Version Manager Modal */}
       <VersionManagerModal

@@ -132,3 +132,249 @@ export function parseImport(text: string): Partial<AppState> | null {
   return res.ok && res.data ? res.data : null;
 }
 
+/** Export live CV to PNG image using html2canvas canvas extraction. */
+export async function exportPng(fileName: string): Promise<void> {
+  const el = document.getElementById('print-root');
+  const mount = document.getElementById('print-mount');
+  if (!el || !mount) return;
+
+  const prev = mount.style.cssText;
+  mount.style.cssText =
+    'display:block;position:fixed;left:-10000px;top:0;z-index:-1;background:#ffffff;';
+
+  try {
+    // @ts-ignore - html2canvas is bundled as dependency of html2pdf.js
+    const html2canvasModule = await import('html2canvas');
+    const html2canvas = html2canvasModule.default || html2canvasModule;
+    const canvas: HTMLCanvasElement = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      windowWidth: 794,
+    });
+
+    const dataUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = `${fileName || 'CV'}.png`;
+    a.click();
+  } finally {
+    mount.style.cssText = prev;
+  }
+}
+
+/** Formats CV data into clean, readable plain text for pasting into job applications. */
+export function cvToPlainText(cv: CVData): string {
+  const lines: string[] = [];
+  const p = cv.personal;
+
+  if (p.fullName) lines.push(p.fullName.toUpperCase());
+  if (p.title) lines.push(p.title);
+
+  const contactParts = [p.email, p.phone, p.location].filter(Boolean);
+  if (contactParts.length) lines.push(contactParts.join(' | '));
+
+  const linkParts = [p.website, p.linkedin, p.github].filter(Boolean);
+  if (linkParts.length) lines.push(linkParts.join(' | '));
+  lines.push('');
+
+  if (cv.summary && cv.sectionVisibility.summary) {
+    const title = cv.sectionLabels?.summary || 'RINGKASAN PROFESIONAL';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    lines.push(cv.summary.trim());
+    lines.push('');
+  }
+
+  if (cv.experience.length && cv.sectionVisibility.experience) {
+    const title = cv.sectionLabels?.experience || 'PENGALAMAN KERJA';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    cv.experience.forEach((e) => {
+      lines.push(`${e.role || 'Role'} - ${e.company || 'Perusahaan'}`);
+      const dateLoc = [
+        e.current ? `${e.startDate} - Sekarang` : `${e.startDate} - ${e.endDate}`,
+        e.location,
+      ].filter(Boolean).join(' | ');
+      if (dateLoc) lines.push(dateLoc);
+      e.bullets.filter(Boolean).forEach((b) => lines.push(`• ${b}`));
+      lines.push('');
+    });
+  }
+
+  if (cv.projects.length && cv.sectionVisibility.projects) {
+    const title = cv.sectionLabels?.projects || 'PROYEK PILIHAN';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    cv.projects.forEach((proj) => {
+      lines.push(`${proj.title}${proj.link ? ` (${proj.link})` : ''}`);
+      if (proj.tech.length) lines.push(`Teknologi: ${proj.tech.join(', ')}`);
+      if (proj.description) lines.push(proj.description);
+      proj.achievements.filter(Boolean).forEach((a) => lines.push(`• ${a}`));
+      lines.push('');
+    });
+  }
+
+  if (cv.education.length && cv.sectionVisibility.education) {
+    const title = cv.sectionLabels?.education || 'PENDIDIKAN';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    cv.education.forEach((edu) => {
+      const degreeField = [edu.degree, edu.field].filter(Boolean).join(' ');
+      lines.push(`${degreeField ? `${degreeField} - ` : ''}${edu.institution}`);
+      const dateStr = edu.current ? `${edu.startDate} - Sekarang` : `${edu.startDate} - ${edu.endDate}`;
+      if (dateStr.trim()) lines.push(dateStr);
+      if (edu.details) lines.push(edu.details);
+      lines.push('');
+    });
+  }
+
+  if (cv.skills.length && cv.sectionVisibility.skills) {
+    const title = cv.sectionLabels?.skills || 'KEAHLIAN';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    cv.skills.forEach((g) => {
+      lines.push(`${g.category}: ${g.skills.join(', ')}`);
+    });
+    lines.push('');
+  }
+
+  if (cv.certifications.length && cv.sectionVisibility.certifications) {
+    const title = cv.sectionLabels?.certifications || 'SERTIFIKASI';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    cv.certifications.forEach((c) => {
+      lines.push(`${c.name}${c.issuer ? ` - ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`);
+    });
+    lines.push('');
+  }
+
+  if (cv.honors.length && cv.sectionVisibility.honors) {
+    const title = cv.sectionLabels?.honors || 'PENGHARGAAN';
+    lines.push(`=== ${title.toUpperCase()} ===`);
+    cv.honors.forEach((h) => {
+      lines.push(`${h.title}${h.issuer ? ` - ${h.issuer}` : ''}${h.date ? ` (${h.date})` : ''}`);
+      if (h.description) lines.push(`  ${h.description}`);
+    });
+    lines.push('');
+  }
+
+  return lines.join('\n').trim();
+}
+
+/** Formats CV data into standard GitHub-flavored Markdown. */
+export function cvToMarkdown(cv: CVData): string {
+  const lines: string[] = [];
+  const p = cv.personal;
+
+  if (p.fullName) lines.push(`# ${p.fullName}`);
+  if (p.title) lines.push(`### ${p.title}`);
+
+  const contactParts = [p.email, p.phone, p.location].filter(Boolean);
+  if (contactParts.length) lines.push(`**Kontak:** ${contactParts.join(' · ')}  `);
+
+  const links = [
+    p.website ? `[Website](${p.website})` : '',
+    p.linkedin ? `[LinkedIn](${p.linkedin})` : '',
+    p.github ? `[GitHub](${p.github})` : '',
+  ].filter(Boolean);
+  if (links.length) lines.push(links.join(' · '));
+  lines.push('');
+
+  if (cv.summary && cv.sectionVisibility.summary) {
+    const title = cv.sectionLabels?.summary || 'Ringkasan Profesional';
+    lines.push(`## ${title}`);
+    lines.push(cv.summary.trim());
+    lines.push('');
+  }
+
+  if (cv.experience.length && cv.sectionVisibility.experience) {
+    const title = cv.sectionLabels?.experience || 'Pengalaman Kerja';
+    lines.push(`## ${title}`);
+    cv.experience.forEach((e) => {
+      lines.push(`### ${e.role || 'Role'} — ${e.company || 'Perusahaan'}`);
+      const dateLoc = [
+        e.current ? `${e.startDate} – Sekarang` : `${e.startDate} – ${e.endDate}`,
+        e.location,
+      ].filter(Boolean).join(' | ');
+      if (dateLoc) lines.push(`*${dateLoc}*`);
+      lines.push('');
+      e.bullets.filter(Boolean).forEach((b) => lines.push(`- ${b}`));
+      lines.push('');
+    });
+  }
+
+  if (cv.projects.length && cv.sectionVisibility.projects) {
+    const title = cv.sectionLabels?.projects || 'Proyek Pilihan';
+    lines.push(`## ${title}`);
+    cv.projects.forEach((proj) => {
+      lines.push(`### ${proj.title}`);
+      if (proj.link) lines.push(`*[${proj.link}](${proj.link})*`);
+      if (proj.tech.length) lines.push(`**Teknologi:** ${proj.tech.join(', ')}  `);
+      if (proj.description) lines.push(proj.description);
+      proj.achievements.filter(Boolean).forEach((a) => lines.push(`- ${a}`));
+      lines.push('');
+    });
+  }
+
+  if (cv.education.length && cv.sectionVisibility.education) {
+    const title = cv.sectionLabels?.education || 'Pendidikan';
+    lines.push(`## ${title}`);
+    cv.education.forEach((edu) => {
+      const degreeField = [edu.degree, edu.field].filter(Boolean).join(' in ');
+      lines.push(`### ${degreeField ? `${degreeField} — ` : ''}${edu.institution}`);
+      const dateStr = edu.current ? `${edu.startDate} – Sekarang` : `${edu.startDate} – ${edu.endDate}`;
+      if (dateStr.trim()) lines.push(`*${dateStr}*`);
+      if (edu.details) lines.push(`\n${edu.details}`);
+      lines.push('');
+    });
+  }
+
+  if (cv.skills.length && cv.sectionVisibility.skills) {
+    const title = cv.sectionLabels?.skills || 'Keahlian';
+    lines.push(`## ${title}`);
+    cv.skills.forEach((g) => {
+      lines.push(`- **${g.category}:** ${g.skills.join(', ')}`);
+    });
+    lines.push('');
+  }
+
+  if (cv.certifications.length && cv.sectionVisibility.certifications) {
+    const title = cv.sectionLabels?.certifications || 'Sertifikasi';
+    lines.push(`## ${title}`);
+    cv.certifications.forEach((c) => {
+      lines.push(`- **${c.name}**${c.issuer ? ` — ${c.issuer}` : ''}${c.date ? ` (${c.date})` : ''}`);
+    });
+    lines.push('');
+  }
+
+  if (cv.honors.length && cv.sectionVisibility.honors) {
+    const title = cv.sectionLabels?.honors || 'Penghargaan & Prestasi';
+    lines.push(`## ${title}`);
+    cv.honors.forEach((h) => {
+      lines.push(`- **${h.title}**${h.issuer ? ` — ${h.issuer}` : ''}${h.date ? ` (${h.date})` : ''}${h.description ? ` · ${h.description}` : ''}`);
+    });
+    lines.push('');
+  }
+
+  return lines.join('\n').trim();
+}
+
+/** Downloads CV formatted as Markdown file (.md). */
+export function downloadMarkdown(cv: CVData, fileName: string) {
+  const content = cvToMarkdown(cv);
+  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${fileName || 'CV'}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/** Copies plain text version of the CV directly to the clipboard. */
+export async function copyPlainText(cv: CVData): Promise<boolean> {
+  const text = cvToPlainText(cv);
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+
