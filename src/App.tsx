@@ -193,11 +193,28 @@ export default function App() {
 
   const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
 
-  const handleExportPdf = useCallback(async () => {
+  const handlePrintAtsPdf = useCallback(() => {
+    setToast({
+      id: String(Date.now()),
+      message: "Pilih tujuan 'Save as PDF' di dialog cetak untuk hasil PDF teks vektor ramah ATS.",
+    });
+    setTimeout(() => {
+      printCV(fileName);
+    }, 150);
+  }, [fileName]);
+
+  const handleExportPdf = handlePrintAtsPdf;
+
+  const handleExportFastPdf = useCallback(async () => {
     setExporting(true);
     try {
-      const pdfBaseName = fileName;
-      await exportPdf(pdfBaseName, state.customization.paperSize);
+      await exportPdf(fileName, state.customization.paperSize);
+      setToast({
+        id: String(Date.now()),
+        message: 'PDF cepat (visual identik) berhasil diunduh',
+      });
+    } catch {
+      alert('Gagal mengekspor PDF.');
     } finally {
       setExporting(false);
     }
@@ -602,7 +619,7 @@ export default function App() {
             <button
               type="button"
               className="flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:border-[var(--text-muted)] active:scale-[0.95]"
-              onClick={printCV}
+              onClick={handlePrintAtsPdf}
               title="Cetak Dokumen (Ctrl+P)"
               aria-label="Cetak Dokumen"
             >
@@ -801,6 +818,30 @@ export default function App() {
                     role="menuitem"
                     onClick={() => {
                       setShowMoreMenu(false);
+                      handlePrintAtsPdf();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <Printer size={15} />
+                    <span>PDF Ramah ATS (Teks Asli)</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleExportFastPdf();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <Download size={15} />
+                    <span>PDF Cepat (Visual Identik)</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
                       handleExportPng();
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
@@ -882,9 +923,9 @@ export default function App() {
             <button
               type="button"
               className="flex h-9 items-center gap-1.5 sm:gap-2 rounded-pill bg-[var(--primary)] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-white shadow-none transition duration-fast ease-standard hover:bg-[var(--primary-hover)] active:scale-[0.95] disabled:opacity-50 shrink-0"
-              onClick={handleExportPdf}
+              onClick={handlePrintAtsPdf}
               disabled={exporting}
-              title="Unduh CV sebagai dokumen PDF A4"
+              title="Unduh CV sebagai dokumen PDF Ramah ATS (Teks Vektor via Cetak)"
               aria-label="Unduh PDF"
             >
               <Download size={15} />

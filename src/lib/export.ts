@@ -44,9 +44,19 @@ export async function exportPdf(fileName: string, paperSize: 'a4' | 'letter' = '
   }
 }
 
-/** Browser-native print (vector-sharp, uses the @media print rules). */
-export function printCV() {
+/**
+ * Browser-native print (vector-sharp, uses the @media print rules).
+ * Temporarily sets document.title to fileName so browser PDF export defaults to the correct name.
+ */
+export function printCV(fileName?: string) {
+  const originalTitle = document.title;
+  if (fileName) {
+    document.title = fileName;
+  }
   window.print();
+  window.setTimeout(() => {
+    document.title = originalTitle;
+  }, 1000);
 }
 
 /** Exports state to JSON including a format version field. */
