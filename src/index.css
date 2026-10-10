@@ -248,9 +248,13 @@ body {
     padding: 0 !important;
     box-shadow: none !important;
     transform: none !important;
-    background: #ffffff !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    background: #ffffff;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  #print-mount #print-root[data-template="creative"] {
+    background: linear-gradient(to right, var(--accent) 0%, var(--accent) 34%, #ffffff 34%, #ffffff 100%) !important;
   }
 
   #print-mount #print-root[data-paper="letter"] {

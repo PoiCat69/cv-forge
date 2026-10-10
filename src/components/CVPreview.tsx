@@ -17,15 +17,29 @@ export const PAGE_DIMENSIONS = {
   letter: { w: 816, h: 1056, label: 'Letter' },
 };
 
+// Helper to test if a hex color has high brightness
+function isLightColor(hex?: string): boolean {
+  if (!hex || !hex.startsWith('#')) return false;
+  const c = hex.replace('#', '');
+  if (c.length !== 3 && c.length !== 6) return false;
+  const r = parseInt(c.length === 3 ? c[0] + c[0] : c.slice(0, 2), 16);
+  const g = parseInt(c.length === 3 ? c[1] + c[1] : c.slice(2, 4), 16);
+  const b = parseInt(c.length === 3 ? c[2] + c[2] : c.slice(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness > 155;
+}
+
 export function CVPreview({
   cv,
   custom,
   forPrint = false,
+  pageCount: externalPageCount,
   onPageCountChange,
 }: {
   cv: CVData;
   custom: Customization;
   forPrint?: boolean;
+  pageCount?: number;
   onPageCountChange?: (count: number) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,7 +56,8 @@ export function CVPreview({
     if (!el) return;
 
     const measure = () => {
-      const h = el.scrollHeight;
+      const contentEl = el.firstElementChild as HTMLElement | null;
+      const h = contentEl ? contentEl.offsetHeight : el.scrollHeight;
       const count = Math.max(1, Math.ceil((h - 5) / paperH));
       setPageCount(count);
       onPageCountChange?.(count);
@@ -57,10 +72,23 @@ export function CVPreview({
   const fontScale = custom.fontSizeScale ?? 1;
   const marginScale = custom.marginScale ?? 1;
 
+  const isCreative = custom.template === 'creative';
+  const effectivePageCount = Math.max(1, externalPageCount ?? pageCount);
+  const minContainerHeight = paperH * effectivePageCount;
+
+  // For Creative Split: 2-color hard-edge linear-gradient on page container
+  // 34% width matches sidebar exactly, 66% matches main content pane
+  const containerBackground = isCreative
+    ? `linear-gradient(to right, ${custom.accent} 0%, ${custom.accent} 34%, #ffffff 34%, #ffffff 100%)`
+    : '#ffffff';
+
   const style: CSSProperties = {
     width: paperW,
-    minHeight: paperH,
+    minHeight: minContainerHeight,
     fontFamily: font,
+    background: containerBackground,
+    WebkitPrintColorAdjust: 'exact',
+    printColorAdjust: 'exact',
     // custom props consumed by template CSS via inline style vars
     ['--accent' as string]: custom.accent,
     ['--line' as string]: String(Number((d.line * fontScale).toFixed(2))),
@@ -75,16 +103,17 @@ export function CVPreview({
       ref={forPrint ? undefined : containerRef}
       id={forPrint ? 'print-root' : undefined}
       data-paper={custom.paperSize || 'a4'}
+      data-template={custom.template}
       lang={custom.documentLanguage || 'id'}
-      className={forPrint ? 'cv-paper bg-white text-slate-900' : 'relative cv-paper bg-white text-slate-900 shadow-paper'}
+      className={`${forPrint ? 'cv-paper' : 'relative cv-paper shadow-paper'} ${isCreative ? '' : 'bg-white'} text-slate-900 flex flex-col`}
       style={style}
     >
       <Template cv={cv} accent={custom.accent} forPrint={forPrint} />
 
       {/* Page Break guidelines (Screen preview only, NEVER in print/PDF) */}
-      {!forPrint && pageCount > 1 && (
+      {!forPrint && effectivePageCount > 1 && (
         <>
-          {Array.from({ length: pageCount - 1 }).map((_, idx) => {
+          {Array.from({ length: effectivePageCount - 1 }).map((_, idx) => {
             const pageBreakTop = (idx + 1) * paperH;
             return (
               <div
@@ -542,26 +571,46 @@ function TechTemplate({ cv, forPrint }: TplProps) {
   );
 }
 
-function CreativeTemplate({ cv, forPrint }: TplProps) {
+function CreativeTemplate({ cv, accent, forPrint }: TplProps) {
   const p = cv.personal;
   // In Creative, sidebar holds personal + skills.
   // Main pane renders ordered content sections (excluding skills).
   const orderedIds = getEffectiveSectionOrder(cv, DEFAULT_ORDER_CREATIVE).filter((id) => id !== 'skills');
+  const light = isLightColor(accent);
 
   return (
-    <div className="flex min-h-full">
-      {/* Sidebar */}
-      <aside id="cv-section-personal" className="w-[34%] p-6 text-white" style={{ background: 'var(--accent)' }}>
-        <div className="flex flex-col items-center text-center">
+    <div className="flex w-full">
+      {/* Sidebar - background drawn by page container linear-gradient */}
+      <aside
+        id="cv-section-personal"
+        className="w-[34%] p-6 text-white bg-transparent"
+        style={{
+          WebkitPrintColorAdjust: 'exact',
+          printColorAdjust: 'exact',
+          textShadow: light ? '0 1px 2px rgba(0, 0, 0, 0.75), 0 0 1px rgba(0, 0, 0, 0.85)' : undefined,
+        }}
+      >
+        <div
+          className="flex flex-col items-center text-center cv-item-avoid-break"
+          style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}
+        >
           {p.showAvatar && p.avatar && (
-            <div className="mb-3 h-28 w-28 overflow-hidden rounded-full border-4 border-white/40">
-              <img src={p.avatar} alt="" className="h-full w-full object-cover" style={{ transform: `scale(${p.avatarZoom}) translate(${p.avatarOffsetX}%, ${p.avatarOffsetY}%)` }} />
+            <div className="mb-3 h-28 w-28 overflow-hidden rounded-full border-4 border-white/40 shadow-sm">
+              <img
+                src={p.avatar}
+                alt=""
+                className="h-full w-full object-cover"
+                style={{ transform: `scale(${p.avatarZoom}) translate(${p.avatarOffsetX}%, ${p.avatarOffsetY}%)` }}
+              />
             </div>
           )}
           <h1 className="text-[20px] font-extrabold leading-tight">{p.fullName || 'Your Name'}</h1>
           <p className="text-[11px] opacity-90">{p.title || 'Your title'}</p>
         </div>
-        <div className="mt-5 space-y-2 text-[10.5px]">
+        <div
+          className="mt-5 space-y-2 text-[10.5px] cv-item-avoid-break"
+          style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}
+        >
           {p.email && <div className="flex items-center gap-1.5"><Mail size={11} /> {p.email}</div>}
           {p.phone && <div className="flex items-center gap-1.5"><Phone size={11} /> {p.phone}</div>}
           {p.location && <div className="flex items-center gap-1.5"><MapPin size={11} /> {p.location}</div>}
@@ -571,9 +620,18 @@ function CreativeTemplate({ cv, forPrint }: TplProps) {
         </div>
         {cv.sectionVisibility.skills && !!cv.skills.length && (
           <div className="mt-5" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-            <h2 className="mb-1.5 text-[11px] font-bold uppercase tracking-wider">{cv.sectionLabels?.skills || 'Skills'}</h2>
+            <h2
+              className="mb-1.5 text-[11px] font-bold uppercase tracking-wider cv-heading-avoid-orphan"
+              style={{ breakAfter: 'avoid', pageBreakAfter: 'avoid' }}
+            >
+              {cv.sectionLabels?.skills || 'Skills'}
+            </h2>
             {cv.skills.map((g) => (
-              <div key={g.id} className="mb-1.5 text-[10.5px]">
+              <div
+                key={g.id}
+                className="mb-1.5 text-[10.5px] cv-item-avoid-break"
+                style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}
+              >
                 <div className="font-semibold">{g.category}</div>
                 <div className="opacity-90">{g.skills.join(', ')}</div>
               </div>
@@ -582,7 +640,7 @@ function CreativeTemplate({ cv, forPrint }: TplProps) {
         )}
       </aside>
       {/* Main */}
-      <div className="flex-1 p-7">
+      <div className="flex-1 p-7 bg-transparent">
         {orderedIds.map((id) => renderSectionById(id, cv, false, false, forPrint))}
       </div>
     </div>

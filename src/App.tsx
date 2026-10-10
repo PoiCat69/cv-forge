@@ -1327,7 +1327,7 @@ export default function App() {
       {typeof document !== 'undefined' &&
         document.getElementById('print-mount') &&
         createPortal(
-          <CVPreview cv={state.cv} custom={state.customization} forPrint />,
+          <CVPreview cv={state.cv} custom={state.customization} forPrint pageCount={pageCount} />,
           document.getElementById('print-mount')!,
         )}
     </div>
