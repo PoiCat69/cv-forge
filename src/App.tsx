@@ -25,6 +25,7 @@ export default function App() {
   const [showForm, setShowForm] = useState(true);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [zoom, setZoom] = useState(0.72);
+  const [pageCount, setPageCount] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
@@ -305,10 +306,32 @@ export default function App() {
           className={`scroll-slim relative min-h-0 flex-1 overflow-auto ${showForm ? 'hidden lg:block' : 'block'}`}
           style={{ background: 'var(--surface-2)' }}
         >
-          {/* Floating Zoom Controls Capsule */}
-          <div className="sticky top-3 z-10 flex items-center justify-end px-6">
+          {/* Floating Zoom & Page Indicator Capsule */}
+          <div className="sticky top-3 z-10 flex items-center justify-between px-6 pointer-events-none">
+            {/* Page Count indicator badge */}
+            <div className="pointer-events-auto">
+              {pageCount > 1 ? (
+                <div
+                  className="flex items-center gap-1.5 rounded-pill border border-amber-500/50 bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 backdrop-blur-md animate-modal-enter shadow-none"
+                  title="Dokumen melebihi 1 halaman A4. Periksa garis batas halaman di preview untuk memastikan teks tidak terpotong saat diekspor."
+                >
+                  <AlertCircle size={13} />
+                  <span>{pageCount} Halaman A4</span>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-1.5 rounded-pill border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--text-muted)] backdrop-blur-md"
+                  style={{ background: 'color-mix(in srgb, var(--surface) 90%, transparent)' }}
+                  title="Dokumen pas dalam 1 halaman A4"
+                >
+                  <span>1 Halaman A4</span>
+                </div>
+              )}
+            </div>
+
+            {/* Zoom Controls */}
             <div
-              className="flex items-center gap-1 rounded-pill border px-2 py-1 shadow-none backdrop-blur-md app-surface"
+              className="pointer-events-auto flex items-center gap-1 rounded-pill border px-2 py-1 shadow-none backdrop-blur-md app-surface"
               style={{
                 borderColor: 'var(--border)',
                 background: 'color-mix(in srgb, var(--surface) 90%, transparent)',
@@ -341,7 +364,7 @@ export default function App() {
           {/* Staging A4 canvas with Apple single product drop-shadow */}
           <div className="flex justify-center px-4 pb-16 pt-4 sm:px-6 print-canvas">
             <div className="cv-scale" style={{ transform: `scale(${zoom})`, transformOrigin: 'top center' }}>
-              <CVPreview cv={state.cv} custom={state.customization} />
+              <CVPreview cv={state.cv} custom={state.customization} onPageCountChange={setPageCount} />
             </div>
           </div>
         </div>

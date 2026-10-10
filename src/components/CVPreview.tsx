@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Mail, Phone, MapPin, Globe, Linkedin, Github, ExternalLink,
 } from 'lucide-react';
@@ -10,9 +10,39 @@ import { densityTokens } from '../lib/defaults';
 const A4_W = 794;
 const A4_H = 1123;
 
-export function CVPreview({ cv, custom, forPrint = false }: { cv: CVData; custom: Customization; forPrint?: boolean }) {
+export function CVPreview({
+  cv,
+  custom,
+  forPrint = false,
+  onPageCountChange,
+}: {
+  cv: CVData;
+  custom: Customization;
+  forPrint?: boolean;
+  onPageCountChange?: (count: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pageCount, setPageCount] = useState(1);
   const font = FONTS.find((f) => f.id === custom.font)?.stack ?? FONTS[0].stack;
   const d = densityTokens[custom.density];
+
+  useEffect(() => {
+    if (forPrint) return;
+    const el = containerRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const h = el.scrollHeight;
+      const count = Math.max(1, Math.ceil((h - 5) / A4_H));
+      setPageCount(count);
+      onPageCountChange?.(count);
+    };
+
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [forPrint, cv, custom, onPageCountChange]);
 
   const style: CSSProperties = {
     width: A4_W,
@@ -29,11 +59,35 @@ export function CVPreview({ cv, custom, forPrint = false }: { cv: CVData; custom
 
   return (
     <div
+      ref={forPrint ? undefined : containerRef}
       id={forPrint ? 'print-root' : undefined}
-      className={forPrint ? 'cv-paper bg-white text-slate-900' : 'cv-paper bg-white text-slate-900 shadow-paper'}
+      className={forPrint ? 'cv-paper bg-white text-slate-900' : 'relative cv-paper bg-white text-slate-900 shadow-paper'}
       style={style}
     >
       <Template cv={cv} accent={custom.accent} />
+
+      {/* A4 Page Break guidelines (Screen preview only, NEVER in print/PDF) */}
+      {!forPrint && pageCount > 1 && (
+        <>
+          {Array.from({ length: pageCount - 1 }).map((_, idx) => {
+            const pageBreakTop = (idx + 1) * A4_H;
+            return (
+              <div
+                key={idx}
+                className="pointer-events-none absolute left-0 right-0 z-30 flex items-center justify-between border-b-2 border-dashed border-red-500/70 px-4 py-1 select-none"
+                style={{ top: `${pageBreakTop}px` }}
+              >
+                <span className="rounded bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                  Akhir Halaman {idx + 1} (Batas A4)
+                </span>
+                <span className="rounded bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700 shadow-sm dark:bg-red-950 dark:text-red-300">
+                  Halaman {idx + 2} dimulai
+                </span>
+              </div>
+            );
+          })}
+        </>
+      )}
     </div>
   );
 }

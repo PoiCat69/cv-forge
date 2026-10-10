@@ -48,6 +48,7 @@ export interface EducationItem {
   field: string;
   startDate: string;
   endDate: string;
+  current?: boolean;
   details: string;
   visible: boolean;
 }

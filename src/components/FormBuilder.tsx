@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   User, FileText, Briefcase, FolderGit2, GraduationCap, Wrench, Award,
-  Sparkles, Trash2, Plus, Wand2,
+  Sparkles, Trash2, Plus, Wand2, ChevronUp, ChevronDown, Copy, GripVertical,
 } from 'lucide-react';
 import type {
   CVData, ExperienceItem, ProjectItem, EducationItem, CertificationItem, SkillGroup, HonorItem,
@@ -12,6 +12,102 @@ import { AccordionSection, Field, TagInput, AddButton } from './ui';
 import { AvatarUploader } from './AvatarUploader';
 
 type SetCV = (updater: (cv: CVData) => CVData) => void;
+
+function reorderList<T>(list: T[], fromIndex: number, toIndex: number): T[] {
+  const result = [...list];
+  const [removed] = result.splice(fromIndex, 1);
+  result.splice(toIndex, 0, removed);
+  return result;
+}
+
+function duplicateItem<T extends { id: string }>(list: T[], index: number): T[] {
+  const item = list[index];
+  const copy = { ...item, id: uid() };
+  const next = [...list];
+  next.splice(index + 1, 0, copy);
+  return next;
+}
+
+function ItemHeader({
+  title,
+  index,
+  total,
+  section,
+  onMoveUp,
+  onMoveDown,
+  onDuplicate,
+  onRemove,
+}: {
+  title: string;
+  index: number;
+  total: number;
+  section: string;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onDuplicate: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-[var(--border)] pb-2 mb-3">
+      <div className="flex items-center gap-1.5 text-xs font-semibold tracking-[-0.12px] text-[var(--text)]">
+        <span
+          draggable
+          onDragStart={(e) => {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ section, index }));
+            e.dataTransfer.effectAllowed = 'move';
+          }}
+          title="Seret untuk mengatur urutan"
+          aria-label="Seret untuk mengatur urutan"
+          className="grid h-6 w-5 place-items-center cursor-grab rounded-control text-[var(--text-muted)] hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:cursor-grabbing"
+        >
+          <GripVertical size={13} />
+        </span>
+        <span>{title} #{index + 1}</span>
+      </div>
+
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          disabled={index === 0}
+          onClick={onMoveUp}
+          title="Pindahkan ke atas"
+          aria-label="Pindahkan ke atas"
+          className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] disabled:opacity-20 disabled:pointer-events-none active:scale-[0.95]"
+        >
+          <ChevronUp size={14} />
+        </button>
+        <button
+          type="button"
+          disabled={index === total - 1}
+          onClick={onMoveDown}
+          title="Pindahkan ke bawah"
+          aria-label="Pindahkan ke bawah"
+          className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] disabled:opacity-20 disabled:pointer-events-none active:scale-[0.95]"
+        >
+          <ChevronDown size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={onDuplicate}
+          title="Duplikat item ini"
+          aria-label="Duplikat item"
+          className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:scale-[0.95]"
+        >
+          <Copy size={13} />
+        </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          title="Hapus item ini"
+          aria-label="Hapus item"
+          className="grid h-7 w-7 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
+        >
+          <Trash2 size={13} />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function FormBuilder({
   cv,
@@ -52,20 +148,20 @@ export function FormBuilder({
         </div>
       </AccordionSection>
 
-      {/* 2. Summary --------------------------------------------------------- */}
+      {/* 2. Summary ---------------------------------------------------------- */}
       <AccordionSection title="Professional Summary" icon={<FileText size={18} />} open={!!open.summary} onToggle={() => toggle('summary')} visible={vis.summary} onVisibleChange={(v) => setVis('summary', v)}>
-        <Field label="Summary" hint="2–3 sentences. Lead with impact and quantify, e.g. 'cut load time 40%'.">
-          <textarea
-            className="app-textarea min-h-[108px] resize-y"
-            value={cv.summary}
-            onChange={(e) => setCV((c) => ({ ...c, summary: e.target.value }))}
-            placeholder="Full-stack engineer with 5+ years building…"
-          />
-        </Field>
-        <div className="mt-3 flex justify-end">
+        <div className="space-y-3">
+          <Field label="Professional summary" hint="3-4 sentences highlighting impact, domain expertise, and career trajectory">
+            <textarea
+              className="app-textarea min-h-[96px]"
+              value={cv.summary}
+              placeholder="Backend engineer with 6+ years designing distributed systems…"
+              onChange={(e) => setCV((c) => ({ ...c, summary: e.target.value }))}
+            />
+          </Field>
           <button
             type="button"
-            className="btn btn-outline rounded-pill text-sm text-[var(--primary)] hover:border-[var(--primary)] hover:bg-[var(--surface-pearl)] active:scale-[0.95]"
+            className="btn btn-outline rounded-pill px-4 py-1.5 text-xs text-[var(--primary)] hover:border-[var(--primary)] active:scale-[0.95]"
             onClick={() => setCV((c) => ({ ...c, summary: polishSummary(c.summary) }))}
           >
             <Sparkles size={14} /> <span>Polish writing</span>
@@ -80,12 +176,17 @@ export function FormBuilder({
             <ExperienceEditor
               key={item.id}
               item={item}
+              index={i}
+              total={cv.experience.length}
               onChange={(patch) => setCV((c) => ({ ...c, experience: c.experience.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) }))}
+              onMoveUp={() => setCV((c) => ({ ...c, experience: reorderList(c.experience, i, i - 1) }))}
+              onMoveDown={() => setCV((c) => ({ ...c, experience: reorderList(c.experience, i, i + 1) }))}
+              onDuplicate={() => setCV((c) => ({ ...c, experience: duplicateItem(c.experience, i) }))}
               onRemove={() => {
                 setCV((c) => ({ ...c, experience: c.experience.filter((x) => x.id !== item.id) }));
                 onDeleteToast?.('Pengalaman kerja dihapus');
               }}
-              index={i}
+              onReorder={(fromIdx, toIdx) => setCV((c) => ({ ...c, experience: reorderList(c.experience, fromIdx, toIdx) }))}
             />
           ))}
           <AddButton label="Add experience" onClick={() => setCV((c) => ({ ...c, experience: [...c.experience, newExperience()] }))} />
@@ -95,16 +196,22 @@ export function FormBuilder({
       {/* 4. Projects -------------------------------------------------------- */}
       <AccordionSection title="Selected Projects" icon={<FolderGit2 size={18} />} open={!!open.projects} onToggle={() => toggle('projects')} visible={vis.projects} onVisibleChange={(v) => setVis('projects', v)}>
         <div className="space-y-4">
-          {cv.projects.map((item) => (
+          {cv.projects.map((item, i) => (
             <ProjectEditor
               key={item.id}
               item={item}
+              index={i}
+              total={cv.projects.length}
               accent={accent}
               onChange={(patch) => setCV((c) => ({ ...c, projects: c.projects.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) }))}
+              onMoveUp={() => setCV((c) => ({ ...c, projects: reorderList(c.projects, i, i - 1) }))}
+              onMoveDown={() => setCV((c) => ({ ...c, projects: reorderList(c.projects, i, i + 1) }))}
+              onDuplicate={() => setCV((c) => ({ ...c, projects: duplicateItem(c.projects, i) }))}
               onRemove={() => {
                 setCV((c) => ({ ...c, projects: c.projects.filter((x) => x.id !== item.id) }));
                 onDeleteToast?.('Proyek dihapus');
               }}
+              onReorder={(fromIdx, toIdx) => setCV((c) => ({ ...c, projects: reorderList(c.projects, fromIdx, toIdx) }))}
             />
           ))}
           <AddButton label="Add project" onClick={() => setCV((c) => ({ ...c, projects: [...c.projects, newProject()] }))} />
@@ -114,15 +221,21 @@ export function FormBuilder({
       {/* 5. Education + Certs ---------------------------------------------- */}
       <AccordionSection title="Education & Certifications" icon={<GraduationCap size={18} />} open={!!open.education} onToggle={() => toggle('education')} visible={vis.education} onVisibleChange={(v) => setVis('education', v)}>
         <div className="space-y-4">
-          {cv.education.map((item) => (
+          {cv.education.map((item, i) => (
             <EducationEditor
               key={item.id}
               item={item}
+              index={i}
+              total={cv.education.length}
               onChange={(patch) => setCV((c) => ({ ...c, education: c.education.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) }))}
+              onMoveUp={() => setCV((c) => ({ ...c, education: reorderList(c.education, i, i - 1) }))}
+              onMoveDown={() => setCV((c) => ({ ...c, education: reorderList(c.education, i, i + 1) }))}
+              onDuplicate={() => setCV((c) => ({ ...c, education: duplicateItem(c.education, i) }))}
               onRemove={() => {
                 setCV((c) => ({ ...c, education: c.education.filter((x) => x.id !== item.id) }));
                 onDeleteToast?.('Pendidikan dihapus');
               }}
+              onReorder={(fromIdx, toIdx) => setCV((c) => ({ ...c, education: reorderList(c.education, fromIdx, toIdx) }))}
             />
           ))}
           <AddButton label="Add education" onClick={() => setCV((c) => ({ ...c, education: [...c.education, newEducation()] }))} />
@@ -130,15 +243,39 @@ export function FormBuilder({
           <div className="pt-3">
             <p className="mb-3 text-sm font-semibold tracking-[-0.224px] text-[var(--text)]">Certifications</p>
             <div className="space-y-3">
-              {cv.certifications.map((item) => (
-                <div key={item.id} className="animate-item-enter grid grid-cols-1 items-center gap-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4 sm:grid-cols-[1fr_1fr_96px_auto]">
-                  <input className="app-input" placeholder="Certificate" value={item.name} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, name: e.target.value } : x)) }))} />
-                  <input className="app-input" placeholder="Issuer" value={item.issuer} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, issuer: e.target.value } : x)) }))} />
-                  <input className="app-input" placeholder="Year" value={item.date} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, date: e.target.value } : x)) }))} />
-                  <button type="button" aria-label="Remove certification" className="btn grid h-10 w-10 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => {
-                    setCV((c) => ({ ...c, certifications: c.certifications.filter((x) => x.id !== item.id) }));
-                    onDeleteToast?.('Sertifikasi dihapus');
-                  }}><Trash2 size={15} /></button>
+              {cv.certifications.map((item, i) => (
+                <div
+                  key={item.id}
+                  onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    try {
+                      const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                      if (data.section === 'cert' && typeof data.index === 'number' && data.index !== i) {
+                        setCV((c) => ({ ...c, certifications: reorderList(c.certifications, data.index, i) }));
+                      }
+                    } catch {}
+                  }}
+                  className="animate-item-enter rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4"
+                >
+                  <ItemHeader
+                    title="Cert"
+                    index={i}
+                    total={cv.certifications.length}
+                    section="cert"
+                    onMoveUp={() => setCV((c) => ({ ...c, certifications: reorderList(c.certifications, i, i - 1) }))}
+                    onMoveDown={() => setCV((c) => ({ ...c, certifications: reorderList(c.certifications, i, i + 1) }))}
+                    onDuplicate={() => setCV((c) => ({ ...c, certifications: duplicateItem(c.certifications, i) }))}
+                    onRemove={() => {
+                      setCV((c) => ({ ...c, certifications: c.certifications.filter((x) => x.id !== item.id) }));
+                      onDeleteToast?.('Sertifikasi dihapus');
+                    }}
+                  />
+                  <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[1fr_1fr_96px]">
+                    <input className="app-input" placeholder="Certificate" value={item.name} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, name: e.target.value } : x)) }))} />
+                    <input className="app-input" placeholder="Issuer" value={item.issuer} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, issuer: e.target.value } : x)) }))} />
+                    <input className="app-input" placeholder="Year" value={item.date} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, date: e.target.value } : x)) }))} />
+                  </div>
                 </div>
               ))}
               <AddButton label="Add certification" onClick={() => setCV((c) => ({ ...c, certifications: [...c.certifications, newCert()] }))} />
@@ -150,15 +287,35 @@ export function FormBuilder({
       {/* 6. Skills ---------------------------------------------------------- */}
       <AccordionSection title="Technical & Soft Skills" icon={<Wrench size={18} />} open={!!open.skills} onToggle={() => toggle('skills')} visible={vis.skills} onVisibleChange={(v) => setVis('skills', v)}>
         <div className="space-y-4">
-          {cv.skills.map((grp) => (
-            <div key={grp.id} className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
-              <div className="flex items-center gap-2">
-                <input className="app-input flex-1" placeholder="Category (e.g. Languages)" value={grp.category} onChange={(e) => setCV((c) => ({ ...c, skills: c.skills.map((x) => (x.id === grp.id ? { ...x, category: e.target.value } : x)) }))} />
-                <button type="button" aria-label="Remove skill group" className="btn grid h-10 w-10 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => {
+          {cv.skills.map((grp, i) => (
+            <div
+              key={grp.id}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+              onDrop={(e) => {
+                e.preventDefault();
+                try {
+                  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                  if (data.section === 'skill' && typeof data.index === 'number' && data.index !== i) {
+                    setCV((c) => ({ ...c, skills: reorderList(c.skills, data.index, i) }));
+                  }
+                } catch {}
+              }}
+              className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4"
+            >
+              <ItemHeader
+                title="Skill Group"
+                index={i}
+                total={cv.skills.length}
+                section="skill"
+                onMoveUp={() => setCV((c) => ({ ...c, skills: reorderList(c.skills, i, i - 1) }))}
+                onMoveDown={() => setCV((c) => ({ ...c, skills: reorderList(c.skills, i, i + 1) }))}
+                onDuplicate={() => setCV((c) => ({ ...c, skills: duplicateItem(c.skills, i) }))}
+                onRemove={() => {
                   setCV((c) => ({ ...c, skills: c.skills.filter((x) => x.id !== grp.id) }));
                   onDeleteToast?.('Grup keahlian dihapus');
-                }}><Trash2 size={15} /></button>
-              </div>
+                }}
+              />
+              <input className="app-input w-full" placeholder="Category (e.g. Languages, Frontend)" value={grp.category} onChange={(e) => setCV((c) => ({ ...c, skills: c.skills.map((x) => (x.id === grp.id ? { ...x, category: e.target.value } : x)) }))} />
               <TagInput
                 values={grp.skills}
                 accent={accent}
@@ -174,20 +331,40 @@ export function FormBuilder({
       {/* 7. Honors ---------------------------------------------------------- */}
       <AccordionSection title="Honors & Achievements" icon={<Award size={18} />} open={!!open.honors} onToggle={() => toggle('honors')} visible={vis.honors} onVisibleChange={(v) => setVis('honors', v)}>
         <div className="space-y-4">
-          {cv.honors.map((item) => (
-            <div key={item.id} className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
+          {cv.honors.map((item, i) => (
+            <div
+              key={item.id}
+              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+              onDrop={(e) => {
+                e.preventDefault();
+                try {
+                  const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                  if (data.section === 'honor' && typeof data.index === 'number' && data.index !== i) {
+                    setCV((c) => ({ ...c, honors: reorderList(c.honors, data.index, i) }));
+                  }
+                } catch {}
+              }}
+              className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4"
+            >
+              <ItemHeader
+                title="Honor"
+                index={i}
+                total={cv.honors.length}
+                section="honor"
+                onMoveUp={() => setCV((c) => ({ ...c, honors: reorderList(c.honors, i, i - 1) }))}
+                onMoveDown={() => setCV((c) => ({ ...c, honors: reorderList(c.honors, i, i + 1) }))}
+                onDuplicate={() => setCV((c) => ({ ...c, honors: duplicateItem(c.honors, i) }))}
+                onRemove={() => {
+                  setCV((c) => ({ ...c, honors: c.honors.filter((x) => x.id !== item.id) }));
+                  onDeleteToast?.('Penghargaan dihapus');
+                }}
+              />
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_96px]">
                 <input className="app-input" placeholder="Honor / award" value={item.title} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, title: e.target.value } : x)) }))} />
                 <input className="app-input" placeholder="Issuer" value={item.issuer} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, issuer: e.target.value } : x)) }))} />
                 <input className="app-input" placeholder="Year" value={item.date} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, date: e.target.value } : x)) }))} />
               </div>
               <input className="app-input" placeholder="One-line description (optional)" value={item.description} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, description: e.target.value } : x)) }))} />
-              <div className="flex justify-end">
-                <button type="button" className="btn rounded-pill px-3 py-1.5 text-xs text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => {
-                  setCV((c) => ({ ...c, honors: c.honors.filter((x) => x.id !== item.id) }));
-                  onDeleteToast?.('Penghargaan dihapus');
-                }}><Trash2 size={14} /> Remove honor</button>
-              </div>
             </div>
           ))}
           <AddButton label="Add honor" onClick={() => setCV((c) => ({ ...c, honors: [...c.honors, newHonor()] }))} />
@@ -200,13 +377,51 @@ export function FormBuilder({
 // ---------------------------------------------------------------------------
 // Per-item editors
 // ---------------------------------------------------------------------------
-function ExperienceEditor({ item, onChange, onRemove, index }: { item: ExperienceItem; onChange: (p: Partial<ExperienceItem>) => void; onRemove: () => void; index: number; }) {
+function ExperienceEditor({
+  item,
+  onChange,
+  onRemove,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  index,
+  total,
+  onReorder,
+}: {
+  item: ExperienceItem;
+  onChange: (p: Partial<ExperienceItem>) => void;
+  onRemove: () => void;
+  onDuplicate: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  index: number;
+  total: number;
+  onReorder: (from: number, to: number) => void;
+}) {
   return (
-    <div className="animate-item-enter space-y-4 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold tracking-[-0.224px] text-[var(--text)]">Experience #{index + 1}</span>
-        <button type="button" aria-label="Remove experience" className="btn grid h-9 w-9 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={onRemove}><Trash2 size={15} /></button>
-      </div>
+    <div
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+      onDrop={(e) => {
+        e.preventDefault();
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          if (data.section === 'exp' && typeof data.index === 'number' && data.index !== index) {
+            onReorder(data.index, index);
+          }
+        } catch {}
+      }}
+      className="animate-item-enter space-y-4 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4"
+    >
+      <ItemHeader
+        title="Experience"
+        index={index}
+        total={total}
+        section="exp"
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onDuplicate={onDuplicate}
+        onRemove={onRemove}
+      />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <input className="app-input" placeholder="Role / title" value={item.role} onChange={(e) => onChange({ role: e.target.value })} />
         <input className="app-input" placeholder="Company" value={item.company} onChange={(e) => onChange({ company: e.target.value })} />
@@ -218,7 +433,7 @@ function ExperienceEditor({ item, onChange, onRemove, index }: { item: Experienc
       </div>
       <label className="flex items-center gap-2 text-sm text-[var(--text)] cursor-pointer">
         <input type="checkbox" checked={item.current} onChange={(e) => onChange({ current: e.target.checked, endDate: e.target.checked ? '' : item.endDate })} className="h-4 w-4 rounded-control accent-[var(--primary)] cursor-pointer" />
-        <span>I currently work here</span>
+        <span>Masih bekerja di sini</span>
       </label>
       <BulletEditor bullets={item.bullets} onChange={(bullets) => onChange({ bullets })} />
     </div>
@@ -273,9 +488,53 @@ function BulletEditor({ bullets, onChange }: { bullets: string[]; onChange: (b: 
   );
 }
 
-function ProjectEditor({ item, onChange, onRemove, accent }: { item: ProjectItem; onChange: (p: Partial<ProjectItem>) => void; onRemove: () => void; accent: string; }) {
+function ProjectEditor({
+  item,
+  onChange,
+  onRemove,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  index,
+  total,
+  accent,
+  onReorder,
+}: {
+  item: ProjectItem;
+  onChange: (p: Partial<ProjectItem>) => void;
+  onRemove: () => void;
+  onDuplicate: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  index: number;
+  total: number;
+  accent: string;
+  onReorder: (from: number, to: number) => void;
+}) {
   return (
-    <div className="animate-item-enter space-y-4 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
+    <div
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+      onDrop={(e) => {
+        e.preventDefault();
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          if (data.section === 'proj' && typeof data.index === 'number' && data.index !== index) {
+            onReorder(data.index, index);
+          }
+        } catch {}
+      }}
+      className="animate-item-enter space-y-4 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4"
+    >
+      <ItemHeader
+        title="Project"
+        index={index}
+        total={total}
+        section="proj"
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onDuplicate={onDuplicate}
+        onRemove={onRemove}
+      />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <input className="app-input" placeholder="Project title" value={item.title} onChange={(e) => onChange({ title: e.target.value })} />
         <input className="app-input" placeholder="Demo / repo link" value={item.link} onChange={(e) => onChange({ link: e.target.value })} />
@@ -283,16 +542,55 @@ function ProjectEditor({ item, onChange, onRemove, accent }: { item: ProjectItem
       <input className="app-input" placeholder="One-line description" value={item.description} onChange={(e) => onChange({ description: e.target.value })} />
       <Field label="Tech stack"><TagInput values={item.tech} accent={accent} placeholder="React + Enter" onChange={(tech) => onChange({ tech })} /></Field>
       <Field label="Key achievements"><TagInput values={item.achievements} placeholder="3k stars + Enter" onChange={(achievements) => onChange({ achievements })} /></Field>
-      <div className="flex justify-end">
-        <button type="button" className="btn rounded-pill px-3 py-1.5 text-xs text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={onRemove}><Trash2 size={14} /> Remove project</button>
-      </div>
     </div>
   );
 }
 
-function EducationEditor({ item, onChange, onRemove }: { item: EducationItem; onChange: (p: Partial<EducationItem>) => void; onRemove: () => void; }) {
+function EducationEditor({
+  item,
+  onChange,
+  onRemove,
+  onDuplicate,
+  onMoveUp,
+  onMoveDown,
+  index,
+  total,
+  onReorder,
+}: {
+  item: EducationItem;
+  onChange: (p: Partial<EducationItem>) => void;
+  onRemove: () => void;
+  onDuplicate: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  index: number;
+  total: number;
+  onReorder: (from: number, to: number) => void;
+}) {
   return (
-    <div className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
+    <div
+      onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}
+      onDrop={(e) => {
+        e.preventDefault();
+        try {
+          const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+          if (data.section === 'edu' && typeof data.index === 'number' && data.index !== index) {
+            onReorder(data.index, index);
+          }
+        } catch {}
+      }}
+      className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4"
+    >
+      <ItemHeader
+        title="Education"
+        index={index}
+        total={total}
+        section="edu"
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
+        onDuplicate={onDuplicate}
+        onRemove={onRemove}
+      />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <input className="app-input" placeholder="Institution" value={item.institution} onChange={(e) => onChange({ institution: e.target.value })} />
         <div className="grid grid-cols-2 gap-2">
@@ -301,13 +599,19 @@ function EducationEditor({ item, onChange, onRemove }: { item: EducationItem; on
         </div>
         <div className="grid grid-cols-2 gap-2">
           <input className="app-input" placeholder="Start year" value={item.startDate} onChange={(e) => onChange({ startDate: e.target.value })} />
-          <input className="app-input" placeholder="End year" value={item.endDate} onChange={(e) => onChange({ endDate: e.target.value })} />
+          <input className="app-input" placeholder="End year" value={item.endDate} disabled={item.current} onChange={(e) => onChange({ endDate: e.target.value })} />
         </div>
         <input className="app-input" placeholder="Details (GPA, honors)" value={item.details} onChange={(e) => onChange({ details: e.target.value })} />
       </div>
-      <div className="flex justify-end">
-        <button type="button" className="btn rounded-pill px-3 py-1.5 text-xs text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={onRemove}><Trash2 size={14} /> Remove</button>
-      </div>
+      <label className="flex items-center gap-2 text-sm text-[var(--text)] cursor-pointer">
+        <input
+          type="checkbox"
+          checked={!!item.current}
+          onChange={(e) => onChange({ current: e.target.checked, endDate: e.target.checked ? '' : item.endDate })}
+          className="h-4 w-4 rounded-control accent-[var(--primary)] cursor-pointer"
+        />
+        <span>Masih studi di sini</span>
+      </label>
     </div>
   );
 }
@@ -317,8 +621,7 @@ function EducationEditor({ item, onChange, onRemove }: { item: EducationItem; on
 // ---------------------------------------------------------------------------
 const newExperience = (): ExperienceItem => ({ id: uid(), company: '', role: '', location: '', startDate: '', endDate: '', current: false, bullets: [''], visible: true });
 const newProject = (): ProjectItem => ({ id: uid(), title: '', tech: [], link: '', description: '', achievements: [], visible: true });
-const newEducation = (): EducationItem => ({ id: uid(), institution: '', degree: '', field: '', startDate: '', endDate: '', details: '', visible: true });
+const newEducation = (): EducationItem => ({ id: uid(), institution: '', degree: '', field: '', startDate: '', endDate: '', current: false, details: '', visible: true });
 const newCert = (): CertificationItem => ({ id: uid(), name: '', issuer: '', date: '', visible: true });
 const newSkillGroup = (): SkillGroup => ({ id: uid(), category: '', skills: [] });
 const newHonor = (): HonorItem => ({ id: uid(), title: '', issuer: '', date: '', description: '', visible: true });
-
