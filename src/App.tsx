@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   FileText, Moon, Sun, Download, FileJson, Upload, Printer,
-  RotateCcw, ZoomIn, ZoomOut, Sliders, PanelLeftClose, PanelLeft,
+  RotateCcw, ZoomIn, ZoomOut, Sliders,
   Undo2, Redo2, Check, AlertCircle, Layers, ChevronDown, HelpCircle,
   Maximize2, Minimize2, Copy, Image, History, Sparkles, FilePlus, MoreHorizontal,
   Search,
@@ -45,7 +45,6 @@ export default function App() {
   const { theme, themeMode, cycleTheme } = useTheme();
   const [focusMode, setFocusMode] = useState(false);
   const [mobileTab, setMobileTab] = useState<'form' | 'preview'>('form');
-  const [showForm, setShowForm] = useState(true);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
@@ -262,6 +261,8 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler);
   }, [handleExportPdf]);
 
+  const activeDocName = state.cv.personal.fullName?.trim() || 'CV Tanpa Nama';
+
   return (
     <div className="flex h-screen flex-col overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       {/* Accessibility Skip Link */}
@@ -274,351 +275,580 @@ export default function App() {
 
       {/* ---------------- 1. Top Frosted Bar (Apple sub-nav-frosted style) ---------------- */}
       <header
-        className="sticky top-0 z-20 flex h-[52px] shrink-0 items-center justify-between border-b px-4 backdrop-blur-md sm:px-6 app-surface"
+        className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b px-4 sm:px-6 backdrop-blur-md app-surface rounded-none"
         style={{
           borderColor: 'var(--border)',
           background: 'color-mix(in srgb, var(--surface) 85%, transparent)',
         }}
       >
-        {/* Brand / Logo & Status */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-control bg-[var(--primary)] text-white transition active:scale-[0.95]">
+        {/* Kiri: Brand / Logo, Nama Dokumen Aktif & Indikator Tersimpan */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 min-w-0">
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-[var(--primary)] text-white shadow-none transition duration-fast ease-standard active:scale-[0.95]"
+            title="CV Forge — Real-time CV Builder"
+            aria-label="CV Forge Logo"
+          >
             <FileText size={17} />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-semibold leading-none tracking-[-0.224px] text-[var(--text)]">CV Forge</h1>
-              {/* Auto-save status pill */}
-              <div className="hidden sm:flex items-center">
-                {saveStatus === 'saving' && (
-                  <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-normal">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                    <span>Menyimpan…</span>
-                  </span>
-                )}
-                {saveStatus === 'saved' && (
-                  <span className="flex items-center gap-1 text-xs text-[var(--text-muted)] font-normal" title="Semua perubahan tersimpan otomatis di browser">
-                    <Check size={12} className="text-emerald-500" />
-                    <span>Tersimpan</span>
-                  </span>
-                )}
-                {saveStatus === 'error' && (
-                  <span className="flex items-center gap-1 text-xs text-red-500 font-normal" title={errorMessage || 'Gagal menyimpan ke penyimpanan lokal'}>
-                    <AlertCircle size={12} />
-                    <span>Gagal simpan</span>
-                  </span>
-                )}
-              </div>
+
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-sm font-semibold tracking-[-0.224px] text-[var(--text)] shrink-0 leading-none">
+              CV Forge
+            </h1>
+
+            {/* Subtle Divider */}
+            <span className="hidden sm:inline text-xs text-[var(--border)] select-none">/</span>
+
+            {/* Active Document Name */}
+            <span
+              className="hidden sm:inline max-w-[110px] md:max-w-[160px] truncate text-xs font-medium text-[var(--text-muted)] leading-none"
+              title={`Dokumen aktif: ${activeDocName}`}
+            >
+              {activeDocName}
+            </span>
+
+            {/* Auto-save Status Pill */}
+            <div className="flex items-center shrink-0" aria-live="polite">
+              {saveStatus === 'saving' && (
+                <span
+                  className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-normal"
+                  title="Menyimpan perubahan ke penyimpanan lokal…"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="hidden md:inline">Menyimpan…</span>
+                </span>
+              )}
+              {saveStatus === 'saved' && (
+                <span
+                  className="flex items-center gap-1 text-xs text-[var(--text-muted)] font-normal"
+                  title="Semua perubahan tersimpan otomatis di browser"
+                >
+                  <Check size={13} className="text-emerald-500" />
+                  <span className="hidden md:inline">Tersimpan</span>
+                </span>
+              )}
+              {saveStatus === 'error' && (
+                <span
+                  className="flex items-center gap-1 text-xs text-red-500 font-normal"
+                  title={errorMessage || 'Gagal menyimpan ke penyimpanan lokal'}
+                >
+                  <AlertCircle size={13} />
+                  <span className="hidden md:inline">Gagal simpan</span>
+                </span>
+              )}
             </div>
-            <p className="mt-0.5 text-xs tracking-[-0.12px] text-[var(--text-muted)]">Real-time CV builder</p>
           </div>
+        </div>
 
-          {/* Version Selector Pill */}
-          <button
-            type="button"
-            onClick={() => setShowVersionsModal(true)}
-            title="Kelola & ganti versi CV"
-            className="hidden sm:flex items-center gap-1.5 rounded-pill border border-[var(--border)] bg-[var(--surface-pearl)] px-2.5 py-1 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:border-[var(--primary)] active:scale-[0.95]"
-          >
-            <Layers size={13} className="text-[var(--primary)]" />
-            <span className="max-w-[110px] truncate">{activeVersion.name}</span>
-            <ChevronDown size={11} className="text-[var(--text-muted)]" />
-          </button>
+        {/* Tengah / Kiri-Tengah: Kontrol Dokumen (Undo/Redo & Versi CV di Desktop) ATAU Tab Switcher di Mobile (<640px) */}
+        <div className="flex items-center justify-center">
+          {/* Mobile View Switcher (< 640px) */}
+          {!focusMode && (
+            <div className="flex sm:hidden items-center rounded-pill bg-[var(--surface-pearl)] p-0.5 border border-[var(--border)]">
+              <button
+                type="button"
+                onClick={() => setMobileTab('form')}
+                aria-label="Tampilkan formulir editor"
+                className={`flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs font-semibold transition duration-fast ease-standard ${
+                  mobileTab === 'form'
+                    ? 'bg-[var(--primary)] text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                }`}
+              >
+                <span>📝 Form</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileTab('preview')}
+                aria-label={`Tampilkan pratinjau dokumen (${pageCount} halaman)`}
+                className={`flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs font-semibold transition duration-fast ease-standard ${
+                  mobileTab === 'preview'
+                    ? 'bg-[var(--primary)] text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+                }`}
+              >
+                <span>👁️ Pratinjau</span>
+              </button>
+            </div>
+          )}
 
-          {/* Undo / Redo buttons */}
-          <div className="ml-2 hidden items-center gap-0.5 rounded-control border border-[var(--border)] p-0.5 md:flex">
+          {/* Desktop/Tablet Document Controls (>= 640px) */}
+          <div className="hidden sm:flex items-center gap-2">
+            {/* Undo / Redo group */}
+            <div className="flex items-center rounded-control border border-[var(--border)] bg-[var(--surface)] p-0.5">
+              <button
+                type="button"
+                className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
+                onClick={undo}
+                disabled={!canUndo}
+                title="Urungkan perubahan (Ctrl+Z)"
+                aria-label="Urungkan (Ctrl+Z)"
+              >
+                <Undo2 size={15} />
+              </button>
+              <button
+                type="button"
+                className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
+                onClick={redo}
+                disabled={!canRedo}
+                title="Ulangi perubahan (Ctrl+Shift+Z)"
+                aria-label="Ulangi (Ctrl+Shift+Z)"
+              >
+                <Redo2 size={15} />
+              </button>
+            </div>
+
+            {/* CV Version Selector */}
             <button
               type="button"
-              className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
-              onClick={undo}
-              disabled={!canUndo}
-              title="Urungkan (Ctrl+Z)"
-              aria-label="Urungkan"
+              onClick={() => setShowVersionsModal(true)}
+              title="Kelola & beralih versi CV"
+              aria-label="Kelola & beralih versi CV"
+              className="flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:border-[var(--primary)] hover:text-[var(--primary)] active:scale-[0.95]"
             >
-              <Undo2 size={14} />
-            </button>
-            <button
-              type="button"
-              className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
-              onClick={redo}
-              disabled={!canRedo}
-              title="Ulangi (Ctrl+Shift+Z)"
-              aria-label="Ulangi"
-            >
-              <Redo2 size={14} />
+              <Layers size={14} className="text-[var(--primary)] shrink-0" />
+              <span className="max-w-[96px] truncate">{activeVersion.name}</span>
+              <ChevronDown size={12} className="text-[var(--text-muted)] shrink-0" />
             </button>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* Mobile undo/redo */}
-          <div className="flex items-center gap-0.5 md:hidden">
+        {/* Kanan: Terkelompok dengan Jarak 8px dalam Grup dan 16-24px Antar Grup */}
+        <div className="flex items-center gap-3 sm:gap-4 desktop:gap-5 shrink-0">
+          {/* Grup 1: [Zoom Controls] (Desktop >= 1068px) */}
+          <div className="hidden desktop:flex items-center rounded-control border border-[var(--border)] bg-[var(--surface)] p-0.5">
             <button
               type="button"
-              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard disabled:opacity-30 active:scale-[0.95]"
-              onClick={undo}
-              disabled={!canUndo}
-              title="Urungkan"
-              aria-label="Urungkan"
+              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] active:scale-[0.95]"
+              onClick={() => setZoom((z) => Math.max(0.35, z - 0.08))}
+              title="Perkecil pratinjau"
+              aria-label="Perkecil pratinjau"
             >
-              <Undo2 size={15} />
+              <ZoomOut size={15} />
             </button>
             <button
               type="button"
-              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard disabled:opacity-30 active:scale-[0.95]"
-              onClick={redo}
-              disabled={!canRedo}
-              title="Ulangi"
-              aria-label="Ulangi"
+              onClick={() => setZoom(1.0)}
+              title="Reset zoom ke 100%"
+              aria-label="Reset zoom ke 100%"
+              className="h-8 px-2 text-center text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-pearl)] rounded-control cursor-pointer transition duration-fast ease-standard"
             >
-              <Redo2 size={15} />
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] active:scale-[0.95]"
+              onClick={() => setZoom((z) => Math.min(1.25, z + 0.08))}
+              title="Perbesar pratinjau"
+              aria-label="Perbesar pratinjau"
+            >
+              <ZoomIn size={15} />
+            </button>
+            <button
+              type="button"
+              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] active:scale-[0.95]"
+              onClick={fitWidth}
+              title="Pas lebar layar (Fit Width)"
+              aria-label="Pas lebar layar (Fit Width)"
+            >
+              <Maximize2 size={14} />
             </button>
           </div>
 
-          {/* Mobile pane toggle */}
-          <button
-            type="button"
-            className="btn btn-ghost grid h-10 w-10 place-items-center rounded-control p-0 lg:hidden"
-            onClick={() => setShowForm((v) => !v)}
-            title="Toggle editor / preview pane"
-            aria-label="Toggle editor"
-          >
-            {showForm ? <PanelLeftClose size={17} /> : <PanelLeft size={17} />}
-          </button>
-
-          {/* Focus Mode Trigger */}
-          <button
-            type="button"
-            className={`btn btn-outline rounded-pill px-3 py-1.5 text-sm active:scale-[0.95] ${
-              focusMode ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/10 font-semibold' : ''
-            }`}
-            onClick={() => setFocusMode((v) => !v)}
-            title={focusMode ? 'Keluar Mode Fokus (Esc)' : 'Mode Fokus (Fokus menulis formulir - F10)'}
-            aria-label="Mode Fokus"
-          >
-            {focusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-            <span className="hidden xl:inline">{focusMode ? 'Keluar Fokus' : 'Fokus'}</span>
-          </button>
-
-          {/* Design Modal Trigger */}
-          <button
-            type="button"
-            className={`btn btn-outline rounded-pill px-4 py-1.5 text-sm active:scale-[0.95] ${
-              showCustomizer ? 'border-[var(--primary)] text-[var(--primary)]' : ''
-            }`}
-            onClick={() => setShowCustomizer((v) => !v)}
-            aria-expanded={showCustomizer}
-          >
-            <Sliders size={14} />
-            <span className="hidden sm:inline">Design</span>
-          </button>
-
-          {/* JSON Import */}
-          <input
-            ref={importRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(e) => {
-              handleImport(e.target.files?.[0]);
-              e.target.value = '';
-            }}
-          />
-          <button
-            type="button"
-            className="btn btn-outline rounded-pill px-4 py-1.5 text-sm active:scale-[0.95]"
-            onClick={() => importRef.current?.click()}
-            title="Import JSON"
-            aria-label="Import JSON"
-          >
-            <Upload size={14} />
-            <span className="hidden md:inline">Import</span>
-          </button>
-
-          {/* JSON Export */}
-          <button
-            type="button"
-            className="btn btn-outline rounded-pill px-4 py-1.5 text-sm active:scale-[0.95]"
-            onClick={handleExportJson}
-            title="Export JSON"
-            aria-label="Export JSON"
-          >
-            <FileJson size={14} />
-            <span className="hidden md:inline">JSON</span>
-          </button>
-
-          {/* Native Print */}
-          <button
-            type="button"
-            className="btn btn-outline rounded-pill px-4 py-1.5 text-sm active:scale-[0.95]"
-            onClick={printCV}
-            title="Print (Ctrl+P)"
-            aria-label="Print"
-          >
-            <Printer size={14} />
-            <span className="hidden md:inline">Print</span>
-          </button>
-
-          {/* Copy Plain Text */}
-          <button
-            type="button"
-            className="btn btn-outline rounded-pill px-3 py-1.5 text-sm active:scale-[0.95]"
-            onClick={handleCopyText}
-            title="Salin CV sebagai teks polos (ATS)"
-            aria-label="Salin teks polos"
-          >
-            <Copy size={14} />
-            <span className="hidden xl:inline">Salin Teks</span>
-          </button>
-
-          {/* More Actions Dropdown (PNG, Markdown, Snapshot, Sample, Blank) */}
-          <div ref={moreMenuRef} className="relative">
+          {/* Grup 2: [Tema & Bantuan Pintasan] (Desktop >= 1068px) */}
+          <div className="hidden desktop:flex items-center gap-2">
+            {/* Theme Toggle Button */}
             <button
               type="button"
-              className={`btn btn-outline rounded-pill px-2.5 py-1.5 text-sm active:scale-[0.95] ${
-                showMoreMenu ? 'border-[var(--primary)] text-[var(--primary)]' : ''
+              className="flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-2.5 text-xs text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] active:scale-[0.95]"
+              onClick={cycleTheme}
+              title={`Tema: ${themeMode === 'system' ? 'Sistem OS' : themeMode === 'dark' ? 'Gelap' : 'Terang'} (Klik untuk beralih)`}
+              aria-label="Ganti tema warna"
+            >
+              {themeMode === 'system' ? (
+                <span className="text-xs">💻</span>
+              ) : theme === 'dark' ? (
+                <Sun size={15} />
+              ) : (
+                <Moon size={15} />
+              )}
+              <span className="capitalize font-medium">
+                {themeMode === 'system' ? 'Sistem' : themeMode === 'dark' ? 'Gelap' : 'Terang'}
+              </span>
+            </button>
+
+            {/* Command Palette Trigger */}
+            <button
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-control border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] active:scale-[0.95]"
+              onClick={() => setShowCommandPalette(true)}
+              title="Menu Cepat / Command Palette (Ctrl+K)"
+              aria-label="Command Palette (Ctrl+K)"
+            >
+              <Search size={15} />
+            </button>
+
+            {/* Shortcuts Help Button */}
+            <button
+              type="button"
+              className="grid h-9 w-9 place-items-center rounded-control border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--text)] active:scale-[0.95]"
+              onClick={() => setShowShortcutsModal(true)}
+              title="Pintasan keyboard (Ctrl+/)"
+              aria-label="Pintasan keyboard"
+            >
+              <HelpCircle size={15} />
+            </button>
+          </div>
+
+          {/* Grup 3: [Import, Export JSON, Print] (Desktop >= 1068px) */}
+          <div className="hidden desktop:flex items-center gap-2">
+            {/* Design Modal Trigger */}
+            <button
+              type="button"
+              className={`flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold transition duration-fast ease-standard active:scale-[0.95] ${
+                showCustomizer
+                  ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/10'
+                  : 'text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:border-[var(--text-muted)]'
               }`}
-              onClick={() => setShowMoreMenu((v) => !v)}
-              title="Opsi & Ekspor lainnya"
-              aria-label="Opsi lainnya"
+              onClick={() => setShowCustomizer((v) => !v)}
+              title="Kustomisasi Template & Desain"
+              aria-label="Kustomisasi Template & Desain"
+              aria-expanded={showCustomizer}
             >
-              <MoreHorizontal size={16} />
+              <Sliders size={15} />
+              <span>Desain</span>
             </button>
 
-            {showMoreMenu && (
-              <div className="absolute right-0 z-30 mt-2 w-56 rounded-card border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-lg animate-dropdown-enter">
-                <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
-                  Format Ekspor Lainnya
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleExportPng();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
-                >
-                  <Image size={14} />
-                  <span>Unduh Gambar PNG</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleExportMarkdown();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
-                >
-                  <FileText size={14} />
-                  <span>Unduh Markdown (.md)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleCopyText();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
-                >
-                  <Copy size={14} />
-                  <span>Salin Teks Polos</span>
-                </button>
+            {/* Hidden Input for JSON Import */}
+            <input
+              ref={importRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
+                handleImport(e.target.files?.[0]);
+                e.target.value = '';
+              }}
+            />
 
-                <div className="my-1 border-t border-[var(--border)]" />
-                <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
-                  Data & Riwayat
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    setShowSnapshotModal(true);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
-                >
-                  <History size={14} />
-                  <span>Riwayat Snapshot ({snapshots.length})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleLoadSample();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
-                >
-                  <Sparkles size={14} />
-                  <span>Muat Contoh Data</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    handleClearBlank();
-                  }}
-                  className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10"
-                >
-                  <FilePlus size={14} />
-                  <span>Mulai Kosong</span>
-                </button>
-              </div>
-            )}
+            {/* Import JSON */}
+            <button
+              type="button"
+              className="flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:border-[var(--text-muted)] active:scale-[0.95]"
+              onClick={() => importRef.current?.click()}
+              title="Impor dari file JSON"
+              aria-label="Impor JSON"
+            >
+              <Upload size={15} />
+              <span>Impor</span>
+            </button>
+
+            {/* Export JSON */}
+            <button
+              type="button"
+              className="flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:border-[var(--text-muted)] active:scale-[0.95]"
+              onClick={handleExportJson}
+              title="Ekspor ke file JSON"
+              aria-label="Ekspor JSON"
+            >
+              <FileJson size={15} />
+              <span>JSON</span>
+            </button>
+
+            {/* Native Print */}
+            <button
+              type="button"
+              className="flex h-9 items-center gap-1.5 rounded-control border border-[var(--border)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:border-[var(--text-muted)] active:scale-[0.95]"
+              onClick={printCV}
+              title="Cetak Dokumen (Ctrl+P)"
+              aria-label="Cetak Dokumen"
+            >
+              <Printer size={15} />
+              <span>Cetak</span>
+            </button>
           </div>
 
-          {/* Primary Action Pill: Export PDF */}
-          <button
-            type="button"
-            className="btn btn-primary rounded-pill px-5 py-1.5 text-sm font-semibold active:scale-[0.95]"
-            onClick={handleExportPdf}
-            disabled={exporting}
-            aria-label="Export PDF"
-          >
-            <Download size={14} />
-            <span>{exporting ? 'Exporting…' : 'PDF'}</span>
-          </button>
+          {/* Grup 4: Menu Overflow "Lainnya" & SATU Tombol Utama "Unduh PDF" */}
+          <div className="flex items-center gap-2">
+            {/* Overflow "Lainnya" Dropdown */}
+            <div ref={moreMenuRef} className="relative">
+              <button
+                type="button"
+                className={`grid h-9 w-9 place-items-center rounded-control border border-[var(--border)] bg-[var(--surface)] text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] active:scale-[0.95] ${
+                  showMoreMenu ? 'border-[var(--primary)] text-[var(--primary)]' : ''
+                }`}
+                onClick={() => setShowMoreMenu((v) => !v)}
+                title="Opsi & ekspor lainnya"
+                aria-label="Opsi lainnya"
+                aria-expanded={showMoreMenu}
+              >
+                <MoreHorizontal size={16} />
+              </button>
 
-          {/* Command Palette Trigger */}
-          <button
-            type="button"
-            className="btn btn-ghost grid h-10 w-10 place-items-center rounded-control p-0 text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
-            onClick={() => setShowCommandPalette(true)}
-            title="Menu Cepat / Command Palette (Ctrl+K)"
-            aria-label="Command Palette (Ctrl+K)"
-          >
-            <Search size={16} />
-          </button>
+              {showMoreMenu && (
+                <div
+                  role="menu"
+                  aria-label="Menu Opsi Lainnya"
+                  className="absolute right-0 z-30 mt-2 w-60 rounded-card border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-lg animate-dropdown-enter"
+                >
+                  {/* Collapsed Secondary Actions for Tablet & Mobile (< 1068px) */}
+                  <div className="desktop:hidden">
+                    <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
+                      Menu Utama
+                    </div>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowCustomizer(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      <Sliders size={15} />
+                      <span>Kustomisasi Desain</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        importRef.current?.click();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      <Upload size={15} />
+                      <span>Impor JSON</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        handleExportJson();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      <FileJson size={15} />
+                      <span>Ekspor JSON</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        printCV();
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      <Printer size={15} />
+                      <span>Cetak Dokumen (Ctrl+P)</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowCommandPalette(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      <Search size={15} />
+                      <span>Command Palette (Ctrl+K)</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setShowShortcutsModal(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      <HelpCircle size={15} />
+                      <span>Pintasan Keyboard (Ctrl+/)</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        cycleTheme();
+                      }}
+                      className="flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)]"
+                    >
+                      <span className="flex items-center gap-2">
+                        {themeMode === 'system' ? <span>💻</span> : theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                        <span>Ganti Tema</span>
+                      </span>
+                      <span className="text-[11px] text-[var(--text-muted)] capitalize">
+                        {themeMode === 'system' ? 'Sistem' : themeMode === 'dark' ? 'Gelap' : 'Terang'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setShowMoreMenu(false);
+                        setFocusMode((v) => !v);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                    >
+                      {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                      <span>{focusMode ? 'Keluar Mode Fokus' : 'Mode Fokus (F10)'}</span>
+                    </button>
 
-          {/* Shortcuts Help Button */}
-          <button
-            type="button"
-            className="btn btn-ghost grid h-10 w-10 place-items-center rounded-control p-0 text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
-            onClick={() => setShowShortcutsModal(true)}
-            title="Pintasan keyboard (Ctrl+/)"
-            aria-label="Pintasan keyboard"
-          >
-            <HelpCircle size={16} />
-          </button>
+                    {/* Mobile-only Document actions (< 640px) */}
+                    <div className="sm:hidden">
+                      <div className="my-1 border-t border-[var(--border)]" />
+                      <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+                        Dokumen & Versi
+                      </div>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canUndo}
+                        onClick={() => {
+                          undo();
+                        }}
+                        className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] disabled:opacity-30"
+                      >
+                        <Undo2 size={15} />
+                        <span>Urungkan (Undo)</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        disabled={!canRedo}
+                        onClick={() => {
+                          redo();
+                        }}
+                        className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] disabled:opacity-30"
+                      >
+                        <Redo2 size={15} />
+                        <span>Ulangi (Redo)</span>
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          setShowMoreMenu(false);
+                          setShowVersionsModal(true);
+                        }}
+                        className="flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Layers size={15} className="text-[var(--primary)]" />
+                          <span>Versi CV</span>
+                        </span>
+                        <span className="max-w-[80px] truncate text-[11px] text-[var(--text-muted)]">
+                          {activeVersion.name}
+                        </span>
+                      </button>
+                    </div>
 
-          {/* Theme Toggle (System / Light / Dark) */}
-          <button
-            type="button"
-            className="btn btn-ghost flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
-            onClick={cycleTheme}
-            title={`Tema: ${themeMode === 'system' ? 'Sistem OS' : themeMode === 'dark' ? 'Gelap' : 'Terang'} (Klik untuk beralih)`}
-            aria-label="Ganti tema warna"
-          >
-            {themeMode === 'system' ? (
-              <span className="text-[13px]">💻</span>
-            ) : theme === 'dark' ? (
-              <Sun size={15} />
-            ) : (
-              <Moon size={15} />
-            )}
-            <span className="hidden sm:inline capitalize text-[11px] font-medium">
-              {themeMode === 'system' ? 'Sistem' : themeMode === 'dark' ? 'Gelap' : 'Terang'}
-            </span>
-          </button>
+                    <div className="my-1 border-t border-[var(--border)]" />
+                  </div>
+
+                  {/* Format Ekspor Lainnya */}
+                  <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
+                    Format Ekspor Lainnya
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleExportPng();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <Image size={15} />
+                    <span>Unduh Gambar PNG</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleExportMarkdown();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <FileText size={15} />
+                    <span>Unduh Markdown (.md)</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleCopyText();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <Copy size={15} />
+                    <span>Salin Teks Polos (ATS)</span>
+                  </button>
+
+                  {/* Data & Riwayat */}
+                  <div className="my-1 border-t border-[var(--border)]" />
+                  <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+                    Data & Riwayat
+                  </div>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setShowSnapshotModal(true);
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <History size={15} />
+                    <span>Riwayat Snapshot ({snapshots.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleLoadSample();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+                  >
+                    <Sparkles size={15} />
+                    <span>Muat Contoh Data</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleClearBlank();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                  >
+                    <FilePlus size={15} />
+                    <span>Mulai Kosong</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* SATU Tombol Utama (Pill Biru) "Unduh PDF" */}
+            <button
+              type="button"
+              className="flex h-9 items-center gap-1.5 sm:gap-2 rounded-pill bg-[var(--primary)] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-white shadow-none transition duration-fast ease-standard hover:bg-[var(--primary-hover)] active:scale-[0.95] disabled:opacity-50 shrink-0"
+              onClick={handleExportPdf}
+              disabled={exporting}
+              title="Unduh CV sebagai dokumen PDF A4"
+              aria-label="Unduh PDF"
+            >
+              <Download size={15} />
+              <span className="sm:hidden">{exporting ? '…' : 'PDF'}</span>
+              <span className="hidden sm:inline">{exporting ? 'Mengekspor…' : 'Unduh PDF'}</span>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -650,9 +880,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Mobile Segmented Tab: Form vs Preview */}
+      {/* Mobile/Tablet Segmented Tab: Form vs Preview (Tablet 640px - 1023px) */}
       {!focusMode && (
-        <div className="flex lg:hidden items-center border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 shrink-0">
+        <div className="hidden sm:flex lg:hidden items-center border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 shrink-0">
           <div className="flex w-full rounded-pill bg-[var(--surface-pearl)] p-0.5 border border-[var(--border)]">
             <button
               type="button"
