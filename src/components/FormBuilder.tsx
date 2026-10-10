@@ -214,13 +214,13 @@ export function FormBuilder({
   };
 
   const expandAll = () => {
-    const next = { personal: true, summary: true, experience: true, projects: true, education: true, skills: true, honors: true };
+    const next = { personal: true, summary: true, experience: true, projects: true, education: true, skills: true, honors: true, score: true };
     setOpen(next);
     try { localStorage.setItem('cvforge.accordion.v1', JSON.stringify(next)); } catch {}
   };
 
   const collapseAll = () => {
-    const next = { personal: false, summary: false, experience: false, projects: false, education: false, skills: false, honors: false };
+    const next = { personal: false, summary: false, experience: false, projects: false, education: false, skills: false, honors: false, score: false };
     setOpen(next);
     try { localStorage.setItem('cvforge.accordion.v1', JSON.stringify(next)); } catch {}
   };
@@ -256,6 +256,8 @@ export function FormBuilder({
       {/* CV Completeness & ATS Heuristics Meter */}
       <CVScoreWidget
         cv={cv}
+        open={open.score ?? false}
+        onToggle={() => toggle('score')}
         onFocusSection={(sec) => {
           if (!open[sec]) toggle(sec);
           onActiveSectionChange?.(sec);
