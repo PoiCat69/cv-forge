@@ -328,7 +328,7 @@ export default function App() {
       {/* Accessibility Skip Link */}
       <a
         href="#main-form-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-control focus:bg-[var(--primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-md"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-control focus:bg-[var(--primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-none"
       >
         Lewati ke Formulir Utama
       </a>
@@ -361,7 +361,7 @@ export default function App() {
 
             {/* Active Document Name */}
             <span
-              className="hidden sm:inline max-w-[110px] md:max-w-[160px] truncate text-xs font-medium text-[var(--text-muted)] leading-none"
+              className="hidden sm:inline max-w-[110px] md:max-w-[160px] truncate text-xs font-normal text-[var(--text-muted)] leading-none"
               title={`Dokumen aktif: ${activeDocName}`}
             >
               {activeDocName}
@@ -374,7 +374,7 @@ export default function App() {
                   className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-normal"
                   title="Menyimpan perubahan ke penyimpanan lokal…"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="h-1.5 w-1.5 rounded-pill bg-[var(--status-warning)] animate-pulse" />
                   <span className="hidden md:inline">Menyimpan…</span>
                 </span>
               )}
@@ -383,16 +383,16 @@ export default function App() {
                   className="flex items-center gap-1 text-xs text-[var(--text-muted)] font-normal"
                   title="Semua perubahan tersimpan otomatis di browser"
                 >
-                  <Check size={13} className="text-emerald-500" />
+                  <Check size={14} className="text-[var(--status-success)]" />
                   <span className="hidden md:inline">Tersimpan</span>
                 </span>
               )}
               {saveStatus === 'error' && (
                 <span
-                  className="flex items-center gap-1 text-xs text-red-500 font-normal"
+                  className="flex items-center gap-1 text-xs text-[var(--status-danger)] font-normal"
                   title={errorMessage || 'Gagal menyimpan ke penyimpanan lokal'}
                 >
-                  <AlertCircle size={13} />
+                  <AlertCircle size={14} />
                   <span className="hidden md:inline">Gagal simpan</span>
                 </span>
               )}
@@ -484,14 +484,14 @@ export default function App() {
               title="Perkecil pratinjau"
               aria-label="Perkecil pratinjau"
             >
-              <ZoomOut size={15} />
+              <ZoomOut size={16} />
             </button>
             <button
               type="button"
               onClick={() => setZoom(1.0)}
               title="Reset zoom ke 100%"
               aria-label="Reset zoom ke 100%"
-              className="h-8 px-2 text-center text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-pearl)] rounded-control cursor-pointer transition duration-fast ease-standard"
+              className="h-8 px-2 text-center text-xs font-normal text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-pearl)] rounded-control cursor-pointer transition duration-fast ease-standard"
             >
               {Math.round(zoom * 100)}%
             </button>
@@ -502,7 +502,7 @@ export default function App() {
               title="Perbesar pratinjau"
               aria-label="Perbesar pratinjau"
             >
-              <ZoomIn size={15} />
+              <ZoomIn size={16} />
             </button>
             <button
               type="button"
@@ -511,7 +511,7 @@ export default function App() {
               title="Pas lebar layar (Fit Width)"
               aria-label="Pas lebar layar (Fit Width)"
             >
-              <Maximize2 size={14} />
+              <Maximize2 size={16} />
             </button>
           </div>
 
@@ -528,11 +528,11 @@ export default function App() {
               {themeMode === 'system' ? (
                 <span className="text-xs">💻</span>
               ) : theme === 'dark' ? (
-                <Sun size={15} />
+                <Sun size={16} />
               ) : (
-                <Moon size={15} />
+                <Moon size={16} />
               )}
-              <span className="capitalize font-medium">
+              <span className="capitalize font-normal">
                 {themeMode === 'system' ? 'Sistem' : themeMode === 'dark' ? 'Gelap' : 'Terang'}
               </span>
             </button>
@@ -545,7 +545,7 @@ export default function App() {
               title="Menu Cepat / Command Palette (Ctrl+K)"
               aria-label="Command Palette (Ctrl+K)"
             >
-              <Search size={15} />
+              <Search size={16} />
             </button>
 
             {/* Shortcuts Help Button */}
@@ -649,11 +649,11 @@ export default function App() {
                 <div
                   role="menu"
                   aria-label="Menu Opsi Lainnya"
-                  className="absolute right-0 z-30 mt-2 w-60 rounded-card border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-lg animate-dropdown-enter"
+                  className="absolute right-0 z-30 mt-2 w-60 rounded-card border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-none animate-dropdown-enter"
                 >
                   {/* Collapsed Secondary Actions for Tablet & Mobile (< 1068px) */}
                   <div className="desktop:hidden">
-                    <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
+                    <div className="px-2 py-1 text-xs font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
                       Menu Utama
                     </div>
                     <button
@@ -665,7 +665,7 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      <Sliders size={15} />
+                      <Sliders size={16} />
                       <span>Kustomisasi Desain</span>
                     </button>
                     <button
@@ -677,7 +677,7 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      <Upload size={15} />
+                      <Upload size={16} />
                       <span>Impor JSON</span>
                     </button>
                     <button
@@ -689,7 +689,7 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      <FileJson size={15} />
+                      <FileJson size={16} />
                       <span>Ekspor JSON</span>
                     </button>
                     <button
@@ -701,7 +701,7 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      <Printer size={15} />
+                      <Printer size={16} />
                       <span>Cetak Dokumen (Ctrl+P)</span>
                     </button>
                     <button
@@ -713,7 +713,7 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      <Search size={15} />
+                      <Search size={16} />
                       <span>Command Palette (Ctrl+K)</span>
                     </button>
                     <button
@@ -725,7 +725,7 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      <HelpCircle size={15} />
+                      <HelpCircle size={16} />
                       <span>Pintasan Keyboard (Ctrl+/)</span>
                     </button>
                     <button
@@ -737,10 +737,10 @@ export default function App() {
                       className="flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)]"
                     >
                       <span className="flex items-center gap-2">
-                        {themeMode === 'system' ? <span>💻</span> : theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                        {themeMode === 'system' ? <span>💻</span> : theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
                         <span>Ganti Tema</span>
                       </span>
-                      <span className="text-[11px] text-[var(--text-muted)] capitalize">
+                      <span className="text-xs text-[var(--text-muted)] capitalize">
                         {themeMode === 'system' ? 'Sistem' : themeMode === 'dark' ? 'Gelap' : 'Terang'}
                       </span>
                     </button>
@@ -753,14 +753,14 @@ export default function App() {
                       }}
                       className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                     >
-                      {focusMode ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+                      {focusMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                       <span>{focusMode ? 'Keluar Mode Fokus' : 'Mode Fokus (F10)'}</span>
                     </button>
 
                     {/* Mobile-only Document actions (< 640px) */}
                     <div className="sm:hidden">
                       <div className="my-1 border-t border-[var(--border)]" />
-                      <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+                      <div className="px-2 py-1 text-xs font-semibold text-[var(--text-muted)]">
                         Dokumen & Versi
                       </div>
                       <button
@@ -772,7 +772,7 @@ export default function App() {
                         }}
                         className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] disabled:opacity-30"
                       >
-                        <Undo2 size={15} />
+                        <Undo2 size={16} />
                         <span>Urungkan (Undo)</span>
                       </button>
                       <button
@@ -784,7 +784,7 @@ export default function App() {
                         }}
                         className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] disabled:opacity-30"
                       >
-                        <Redo2 size={15} />
+                        <Redo2 size={16} />
                         <span>Ulangi (Redo)</span>
                       </button>
                       <button
@@ -797,10 +797,10 @@ export default function App() {
                         className="flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                       >
                         <span className="flex items-center gap-2">
-                          <Layers size={15} className="text-[var(--primary)]" />
+                          <Layers size={16} className="text-[var(--primary)]" />
                           <span>Versi CV</span>
                         </span>
-                        <span className="max-w-[80px] truncate text-[11px] text-[var(--text-muted)]">
+                        <span className="max-w-[80px] truncate text-xs text-[var(--text-muted)]">
                           {activeVersion.name}
                         </span>
                       </button>
@@ -810,7 +810,7 @@ export default function App() {
                   </div>
 
                   {/* Format Ekspor Lainnya */}
-                  <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
+                  <div className="px-2 py-1 text-xs font-semibold text-[var(--text-muted)] border-b border-[var(--border)] mb-1">
                     Format Ekspor Lainnya
                   </div>
                   <button
@@ -822,7 +822,7 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <Printer size={15} />
+                    <Printer size={16} />
                     <span>PDF Ramah ATS (Teks Asli)</span>
                   </button>
                   <button
@@ -834,7 +834,7 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <Download size={15} />
+                    <Download size={16} />
                     <span>PDF Cepat (Visual Identik)</span>
                   </button>
                   <button
@@ -846,7 +846,7 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <Image size={15} />
+                    <Image size={16} />
                     <span>Unduh Gambar PNG</span>
                   </button>
                   <button
@@ -858,7 +858,7 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <FileText size={15} />
+                    <FileText size={16} />
                     <span>Unduh Markdown (.md)</span>
                   </button>
                   <button
@@ -870,13 +870,13 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <Copy size={15} />
+                    <Copy size={16} />
                     <span>Salin Teks Polos (ATS)</span>
                   </button>
 
                   {/* Data & Riwayat */}
                   <div className="my-1 border-t border-[var(--border)]" />
-                  <div className="px-2 py-1 text-[11px] font-semibold text-[var(--text-muted)]">
+                  <div className="px-2 py-1 text-xs font-semibold text-[var(--text-muted)]">
                     Data & Riwayat
                   </div>
                   <button
@@ -888,7 +888,7 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <History size={15} />
+                    <History size={16} />
                     <span>Riwayat Snapshot ({snapshots.length})</span>
                   </button>
                   <button
@@ -900,7 +900,7 @@ export default function App() {
                     }}
                     className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--text)] hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
                   >
-                    <Sparkles size={15} />
+                    <Sparkles size={16} />
                     <span>Muat Contoh Data</span>
                   </button>
                   <button
@@ -910,9 +910,9 @@ export default function App() {
                       setShowMoreMenu(false);
                       handleClearBlank();
                     }}
-                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-red-600 dark:text-red-400 hover:bg-red-500/10"
+                    className="flex w-full items-center gap-2 rounded-control px-2.5 py-1.5 text-xs text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)]"
                   >
-                    <FilePlus size={15} />
+                    <FilePlus size={16} />
                     <span>Mulai Kosong</span>
                   </button>
                 </div>
@@ -928,7 +928,7 @@ export default function App() {
               title="Unduh CV sebagai dokumen PDF Ramah ATS (Teks Vektor via Cetak)"
               aria-label="Unduh PDF"
             >
-              <Download size={15} />
+              <Download size={16} />
               <span className="sm:hidden">{exporting ? '…' : 'PDF'}</span>
               <span className="hidden sm:inline">{exporting ? 'Mengekspor…' : 'Unduh PDF'}</span>
             </button>
@@ -938,9 +938,9 @@ export default function App() {
 
       {/* Backup Reminder Banner (if >7 days since last JSON download) */}
       {showBackupReminder && (
-        <div className="flex items-center justify-between gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-900 dark:text-amber-200">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--status-warning)]/30 bg-[var(--status-warning-bg)] px-4 py-2 text-xs text-[var(--text)]">
           <div className="flex items-center gap-2">
-            <AlertCircle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <AlertCircle size={16} className="text-[var(--status-warning)] shrink-0" />
             <span>
               Sudah lebih dari 7 hari sejak cadangan JSON terakhir. Unduh cadangan untuk mengamankan data riwayat hidup Anda.
             </span>
@@ -949,14 +949,14 @@ export default function App() {
             <button
               type="button"
               onClick={handleExportJson}
-              className="rounded-control bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700 active:scale-[0.95]"
+              className="rounded-control bg-[var(--status-warning)] px-2.5 py-1 text-xs font-semibold text-white hover:opacity-90 active:scale-[0.95]"
             >
               Unduh JSON
             </button>
             <button
               type="button"
               onClick={dismissBackupReminder}
-              className="rounded-control px-2 py-1 text-xs hover:bg-amber-500/20 text-[var(--text-muted)]"
+              className="rounded-control px-2 py-1 text-xs hover:bg-[var(--status-warning-bg)] text-[var(--text-muted)]"
             >
               Nanti
             </button>
@@ -973,7 +973,7 @@ export default function App() {
               onClick={() => setMobileTab('form')}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-pill py-1.5 text-xs font-semibold transition duration-fast ${
                 mobileTab === 'form'
-                  ? 'bg-[var(--primary)] text-white shadow-sm'
+                  ? 'bg-[var(--primary)] text-white shadow-none'
                   : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               }`}
             >
@@ -984,7 +984,7 @@ export default function App() {
               onClick={() => setMobileTab('preview')}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-pill py-1.5 text-xs font-semibold transition duration-fast ${
                 mobileTab === 'preview'
-                  ? 'bg-[var(--primary)] text-white shadow-sm'
+                  ? 'bg-[var(--primary)] text-white shadow-none'
                   : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               }`}
             >
@@ -1004,15 +1004,15 @@ export default function App() {
           style={{ background: 'var(--bg)' }}
         >
           <div className="mx-auto w-full max-w-3xl space-y-4">
-            <div className="flex items-center justify-between rounded-control border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-4 py-2.5 text-xs font-medium text-[var(--primary)]">
+            <div className="flex items-center justify-between rounded-control border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-4 py-2.5 text-xs font-normal text-[var(--primary)]">
               <span className="flex items-center gap-2">
-                <Maximize2 size={13} />
+                <Maximize2 size={14} />
                 <span>Mode Fokus Aktif · Menulis tanpa gangguan</span>
               </span>
               <button
                 type="button"
                 onClick={() => setFocusMode(false)}
-                className="rounded-pill bg-[var(--primary)] px-3 py-1 font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.95]"
+                className="rounded-pill bg-[var(--primary)] px-3 py-1 font-semibold text-white shadow-none transition hover:opacity-90 active:scale-[0.95]"
               >
                 Keluar Fokus (Esc)
               </button>
@@ -1077,15 +1077,15 @@ export default function App() {
             <div className="pointer-events-auto">
               {pageCount > 1 ? (
                 <div
-                  className="flex items-center gap-1.5 rounded-pill border border-amber-500/50 bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 backdrop-blur-md animate-modal-enter shadow-none"
+                  className="flex items-center gap-1.5 rounded-pill border border-[var(--status-warning)]/40 bg-[var(--status-warning-bg)] px-3 py-1 text-xs font-semibold text-[var(--status-warning)] backdrop-blur-md animate-modal-enter shadow-none"
                   title={`Dokumen melebihi 1 halaman ${state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}. Periksa garis batas halaman di preview untuk memastikan teks tidak terpotong saat diekspor.`}
                 >
-                  <AlertCircle size={13} />
+                  <AlertCircle size={14} />
                   <span>{pageCount} Halaman {state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}</span>
                 </div>
               ) : (
                 <div
-                  className="flex items-center gap-1.5 rounded-pill border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--text-muted)] backdrop-blur-md"
+                  className="flex items-center gap-1.5 rounded-pill border border-[var(--border)] px-3 py-1 text-xs font-normal text-[var(--text-muted)] backdrop-blur-md"
                   style={{ background: 'color-mix(in srgb, var(--surface) 90%, transparent)' }}
                   title={`Dokumen pas dalam 1 halaman ${state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}`}
                 >
@@ -1109,13 +1109,13 @@ export default function App() {
                 aria-label="Zoom out"
                 title="Perkecil"
               >
-                <ZoomOut size={13} />
+                <ZoomOut size={14} />
               </button>
               <button
                 type="button"
                 onClick={() => setZoom(1.0)}
                 title="Klik untuk reset ke 100%"
-                className="w-11 text-center text-xs font-medium tracking-[-0.12px] text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
+                className="w-11 text-center text-xs font-normal tracking-[-0.12px] text-[var(--text-muted)] hover:text-[var(--text)] cursor-pointer"
               >
                 {Math.round(zoom * 100)}%
               </button>
@@ -1126,7 +1126,7 @@ export default function App() {
                 aria-label="Zoom in"
                 title="Perbesar"
               >
-                <ZoomIn size={13} />
+                <ZoomIn size={14} />
               </button>
               <span className="h-3 w-px bg-[var(--border)] mx-0.5" />
               <button
@@ -1199,7 +1199,7 @@ export default function App() {
                   }
                 }}
               >
-                <RotateCcw size={13} />
+                <RotateCcw size={14} />
                 <span>Reset</span>
               </button>
             </div>
@@ -1211,7 +1211,7 @@ export default function App() {
               <div className="mt-6 border-t border-[var(--border)] pt-4">
                 <button
                   type="button"
-                  className="btn btn-ghost w-full rounded-pill text-sm text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
+                  className="btn btn-ghost w-full rounded-pill text-sm text-[var(--status-danger)] transition duration-fast ease-standard hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
                   onClick={() => {
                     if (confirm('Clear all fields and start from blank?')) {
                       commitSnapshot();
