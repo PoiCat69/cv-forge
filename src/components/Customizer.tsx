@@ -116,7 +116,7 @@ export function Customizer({
                     style={{ background: p.accent }}
                   />
                 </div>
-                <span className="mt-0.5 block text-[10px] text-[var(--text-muted)] leading-tight">
+                <span className="mt-0.5 block text-xs text-[var(--text-muted)] leading-tight">
                   {p.description}
                 </span>
               </button>
@@ -170,12 +170,13 @@ export function Customizer({
                 type="button"
                 aria-label={`Select accent color ${c}`}
                 onClick={() => onChange({ accent: c })}
-                className="relative h-7 w-7 rounded-pill transition duration-base ease-standard active:scale-[0.95]"
+                className={`relative h-7 w-7 rounded-pill transition duration-base ease-standard active:scale-[0.95] ${
+                  isSelected
+                    ? 'ring-2 ring-[var(--primary)] ring-offset-2 ring-offset-[var(--surface)]'
+                    : 'ring-1 ring-black/10 dark:ring-white/10'
+                }`}
                 style={{
                   background: c,
-                  boxShadow: isSelected
-                    ? `0 0 0 2px var(--surface), 0 0 0 4px var(--primary)`
-                    : 'inset 0 0 0 1px rgba(0,0,0,0.1)',
                 }}
               />
             );
@@ -184,7 +185,7 @@ export function Customizer({
             title="Custom color"
             className="group relative flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-pill border border-[var(--border)] bg-[var(--surface-pearl)] transition duration-base ease-standard hover:border-[var(--primary)] active:scale-[0.95]"
           >
-            <Pipette size={13} className="text-[var(--text-muted)] group-hover:text-[var(--primary)]" />
+            <Pipette size={14} className="text-[var(--text-muted)] group-hover:text-[var(--primary)]" />
             <input
               type="color"
               aria-label="Custom color picker"
@@ -257,7 +258,7 @@ export function Customizer({
                   key={size}
                   type="button"
                   onClick={() => onChange({ paperSize: size })}
-                  className={`rounded-pill px-3 py-1.5 text-center text-xs font-medium transition duration-fast active:scale-[0.95] ${
+                  className={`rounded-pill px-3 py-1.5 text-center text-xs font-normal transition duration-fast active:scale-[0.95] ${
                     isSelected
                       ? 'border-2 border-[var(--primary)] bg-[var(--surface-pearl)] font-semibold text-[var(--text)]'
                       : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)]'
@@ -280,7 +281,7 @@ export function Customizer({
                   key={lang}
                   type="button"
                   onClick={() => onChange({ documentLanguage: lang })}
-                  className={`rounded-pill px-3 py-1.5 text-center text-xs font-medium transition duration-fast active:scale-[0.95] ${
+                  className={`rounded-pill px-3 py-1.5 text-center text-xs font-normal transition duration-fast active:scale-[0.95] ${
                     isSelected
                       ? 'border-2 border-[var(--primary)] bg-[var(--surface-pearl)] font-semibold text-[var(--text)]'
                       : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)]'
@@ -310,7 +311,7 @@ export function Customizer({
                   title="Reset ke 100%"
                   className="text-[var(--text-muted)] hover:text-[var(--primary)]"
                 >
-                  <RotateCcw size={11} />
+                  <RotateCcw size={14} />
                 </button>
               )}
             </div>
@@ -340,7 +341,7 @@ export function Customizer({
                   title="Reset ke 100%"
                   className="text-[var(--text-muted)] hover:text-[var(--primary)]"
                 >
-                  <RotateCcw size={11} />
+                  <RotateCcw size={14} />
                 </button>
               )}
             </div>

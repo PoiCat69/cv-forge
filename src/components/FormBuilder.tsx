@@ -57,7 +57,7 @@ function SectionResetButton({ onReset, label = 'Kosongkan section ini' }: { onRe
             setConfirming(false);
             onReset();
           }}
-          className="rounded-control px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+          className="rounded-control px-2 py-0.5 text-xs font-semibold text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)]"
         >
           Ya, Kosongkan
         </button>
@@ -77,7 +77,7 @@ function SectionResetButton({ onReset, label = 'Kosongkan section ini' }: { onRe
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="text-[11px] text-[var(--text-muted)] hover:text-red-500 transition duration-fast"
+        className="text-xs text-[var(--text-muted)] hover:text-[var(--status-danger)] transition duration-fast"
       >
         {label}
       </button>
@@ -167,16 +167,16 @@ function ItemHeader({
           aria-label="Duplikat item"
           className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] active:scale-[0.95]"
         >
-          <Copy size={13} />
+          <Copy size={14} />
         </button>
         <button
           type="button"
           onClick={onRemove}
           title="Hapus item ini"
           aria-label="Hapus item"
-          className="grid h-7 w-7 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
+          className="grid h-7 w-7 place-items-center rounded-control text-[var(--status-danger)] transition duration-fast ease-standard hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
         >
-          <Trash2 size={13} />
+          <Trash2 size={14} />
         </button>
       </div>
     </div>
@@ -296,7 +296,7 @@ export function FormBuilder({
     <div className="space-y-6">
       {/* Top Accordion Controls */}
       <div className="flex items-center justify-between pb-1">
-        <span className="text-xs font-medium text-[var(--text-muted)]">Formulir Riwayat Hidup</span>
+        <span className="text-xs font-normal text-[var(--text-muted)]">Formulir Riwayat Hidup</span>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -419,7 +419,7 @@ export function FormBuilder({
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[var(--text-muted)]">
                   <span>
                     {cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0} kata · {cv.summary.length} karakter{' '}
-                    <span className={(cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0) >= 40 && (cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0) <= 80 ? 'font-medium text-emerald-600 dark:text-emerald-400' : ''}>
+                    <span className={(cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0) >= 40 && (cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0) <= 80 ? 'font-semibold text-[var(--status-success)]' : ''}>
                       (Saran ATS: 40–80 kata)
                     </span>
                   </span>
@@ -986,11 +986,11 @@ function CustomSectionEditor({
                   const next = (section.bullets || []).filter((_, i) => i !== bIdx);
                   onChange({ bullets: next.length ? next : [''] });
                 }}
-                className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] hover:text-red-500 disabled:opacity-20"
+                className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] hover:text-[var(--status-danger)] hover:bg-[var(--status-danger-bg)] disabled:opacity-20 transition duration-fast active:scale-[0.95]"
                 title="Hapus poin"
                 aria-label="Hapus poin"
               >
-                <Trash2 size={13} />
+                <Trash2 size={14} />
               </button>
             </div>
           ))}
@@ -999,7 +999,7 @@ function CustomSectionEditor({
             onClick={() => onChange({ bullets: [...(section.bullets || ['']), ''] })}
             className="btn btn-outline rounded-control text-xs mt-1"
           >
-            <Plus size={13} />
+            <Plus size={14} />
             <span>Tambah Poin</span>
           </button>
         </div>
@@ -1233,7 +1233,7 @@ function BulletEditor({ bullets, onChange }: { bullets: string[]; onChange: (b: 
               type="button"
               title="Remove bullet"
               aria-label="Remove bullet"
-              className="btn grid h-9 w-9 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
+              className="btn grid h-9 w-9 place-items-center rounded-control text-[var(--status-danger)] transition duration-fast ease-standard hover:bg-[var(--status-danger-bg)] active:scale-[0.95]"
               onClick={() => onChange(bullets.filter((_, j) => j !== i))}
             >
               <Trash2 size={14} />

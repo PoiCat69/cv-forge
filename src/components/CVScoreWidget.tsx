@@ -273,7 +273,7 @@ export function CVScoreWidget({
                 {analysis.passedCount} dari {analysis.totalCount} kriteria terpenuhi · {statusText}
               </span>
             </div>
-            <span className="text-[11px] hidden sm:inline text-[var(--text-muted)]">
+            <span className="text-xs hidden sm:inline text-[var(--text-muted)]">
               Saran bersifat rekomendasi non-blokir
             </span>
           </div>
@@ -284,7 +284,7 @@ export function CVScoreWidget({
               <span className="text-xs font-semibold tracking-[-0.12px] text-[var(--text)]">
                 Kelengkapan Profil & Riwayat
               </span>
-              <span className="text-[11px] text-[var(--text-muted)]">
+              <span className="text-xs text-[var(--text-muted)]">
                 {analysis.kelengkapanList.filter((s) => s.passed).length}/{analysis.kelengkapanList.length} selesai
               </span>
             </div>
@@ -314,7 +314,7 @@ export function CVScoreWidget({
                       </span>
                     </div>
                   </div>
-                  <span className="text-[11px] font-medium text-[var(--text-muted)] shrink-0">
+                  <span className="text-xs font-normal text-[var(--text-muted)] shrink-0">
                     {item.passed ? 'Terpenuhi' : `+${item.weight}%`}
                   </span>
                 </button>
@@ -328,7 +328,7 @@ export function CVScoreWidget({
               <span className="text-xs font-semibold tracking-[-0.12px] text-[var(--text)]">
                 Optimasi Format ATS
               </span>
-              <span className="text-[11px] text-[var(--text-muted)]">
+              <span className="text-xs text-[var(--text-muted)]">
                 {analysis.atsList.filter((s) => s.passed).length}/{analysis.atsList.length} selesai
               </span>
             </div>
@@ -358,7 +358,7 @@ export function CVScoreWidget({
                       </span>
                     </div>
                   </div>
-                  <span className="text-[11px] font-medium text-[var(--text-muted)] shrink-0">
+                  <span className="text-xs font-normal text-[var(--text-muted)] shrink-0">
                     {item.passed ? 'Terpenuhi' : `+${item.weight}%`}
                   </span>
                 </button>
