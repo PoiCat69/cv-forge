@@ -86,6 +86,16 @@ export interface SectionVisibility {
   honors: boolean;
 }
 
+export interface SectionLabels {
+  summary?: string;
+  experience?: string;
+  projects?: string;
+  education?: string;
+  certifications?: string;
+  skills?: string;
+  honors?: string;
+}
+
 export interface CVData {
   personal: PersonalInfo;
   summary: string;
@@ -96,6 +106,7 @@ export interface CVData {
   skills: SkillGroup[];
   honors: HonorItem[];
   sectionVisibility: SectionVisibility;
+  sectionLabels?: SectionLabels;
 }
 
 // ---------------------------------------------------------------------------

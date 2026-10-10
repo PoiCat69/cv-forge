@@ -34,69 +34,258 @@ export function Field({
   );
 }
 
+export const DEFAULT_SKILL_SUGGESTIONS = [
+  'React', 'TypeScript', 'JavaScript', 'Node.js', 'Python', 'Go', 'Java', 'Next.js',
+  'Tailwind CSS', 'PostgreSQL', 'Docker', 'Kubernetes', 'AWS', 'GraphQL', 'REST API',
+  'Git', 'CI/CD', 'Linux', 'Figma', 'UI/UX Design', 'Agile / Scrum', 'System Design',
+  'Microservices', 'Redis', 'MongoDB', 'MySQL', 'C++', 'Vue.js', 'Angular', 'Express.js',
+  'Unit Testing', 'Jest', 'Cypress', 'Communication', 'Leadership', 'Problem Solving',
+];
+
 // --------------------------------------------------------------------------
-// Tag / pill creator (Input control: radius 8px, tags: radius pill 9999px)
+// Tag / pill creator with autocomplete suggestions
 // --------------------------------------------------------------------------
 export function TagInput({
   values,
   onChange,
   placeholder = 'Type and press Enter',
   accent,
+  suggestions,
 }: {
   values: string[];
   onChange: (v: string[]) => void;
   placeholder?: string;
   accent?: string;
+  suggestions?: string[];
 }) {
   const [draft, setDraft] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const add = () => {
-    const v = draft.trim();
+  const add = (valToAdd?: string) => {
+    const v = (valToAdd ?? draft).trim();
     if (v && !values.includes(v)) onChange([...values, v]);
     setDraft('');
+    setShowSuggestions(false);
+  };
+
+  const matchingSuggestions = (suggestions || [])
+    .filter((s) => s.toLowerCase().includes(draft.toLowerCase().trim()) && !values.includes(s))
+    .slice(0, 6);
+
+  return (
+    <div className="relative">
+      <div
+        className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-control border border-[var(--border)] bg-[var(--surface)] p-2 transition-colors duration-base ease-standard focus-within:border-[var(--primary)] focus-within:ring-2 focus-within:ring-[var(--primary-focus)]"
+      >
+        {values.map((v) => (
+          <span
+            key={v}
+            className="chip"
+            style={{
+              background: accent ? `${accent}18` : 'var(--border-subtle)',
+              color: accent ?? 'var(--text)',
+              border: `1px solid ${accent ? `${accent}40` : 'var(--border)'}`,
+            }}
+          >
+            <span>{v}</span>
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((x) => x !== v))}
+              aria-label={`Remove ${v}`}
+              className="grid h-4 w-4 place-items-center rounded-pill opacity-70 transition duration-fast ease-standard hover:opacity-100 active:scale-[0.95]"
+            >
+              <X size={11} />
+            </button>
+          </span>
+        ))}
+        <div className="flex min-w-[140px] flex-1 items-center px-1">
+          <input
+            value={draft}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => {
+              // Delay hiding so clicks on suggestions register
+              setTimeout(() => setShowSuggestions(false), 200);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (matchingSuggestions.length > 0 && draft.trim()) {
+                  add(matchingSuggestions[0]);
+                } else {
+                  add();
+                }
+              } else if (e.key === 'Tab' && matchingSuggestions.length > 0 && draft.trim()) {
+                e.preventDefault();
+                add(matchingSuggestions[0]);
+              } else if (e.key === 'Backspace' && !draft && values.length) {
+                onChange(values.slice(0, -1));
+              }
+            }}
+            placeholder={placeholder}
+            className="w-full bg-transparent text-base leading-normal outline-none text-[var(--text)] placeholder:text-[var(--text-muted)]"
+          />
+        </div>
+      </div>
+
+      {showSuggestions && draft.trim() && matchingSuggestions.length > 0 && (
+        <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-control border border-[var(--border)] bg-[var(--surface)] p-1.5 shadow-sm">
+          <div className="px-2 py-1 text-[11px] font-medium text-[var(--text-muted)]">Saran Skill:</div>
+          {matchingSuggestions.map((item) => (
+            <button
+              key={item}
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                add(item);
+              }}
+              className="flex w-full items-center justify-between rounded-control px-2.5 py-1.5 text-left text-xs text-[var(--text)] transition duration-fast ease-standard hover:bg-[var(--surface-pearl)] hover:text-[var(--primary)]"
+            >
+              <span>{item}</span>
+              <Plus size={12} className="opacity-60" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------
+// Quick Date Picker / Selector
+// --------------------------------------------------------------------------
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+const YEARS = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015];
+
+export function DateInput({
+  value,
+  onChange,
+  placeholder = 'Bulan Thn',
+  disabled = false,
+  showPresent = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  showPresent?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+
+  const pick = (month: string, year: string) => {
+    if (month && year) {
+      onChange(`${month} ${year}`);
+      setOpen(false);
+    } else if (year) {
+      onChange(year);
+      setOpen(false);
+    }
   };
 
   return (
-    <div
-      className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-control border border-[var(--border)] bg-[var(--surface)] p-2 transition-colors duration-base ease-standard focus-within:border-[var(--primary)] focus-within:ring-2 focus-within:ring-[var(--primary-focus)]"
-    >
-      {values.map((v) => (
-        <span
-          key={v}
-          className="chip"
-          style={{
-            background: accent ? `${accent}18` : 'var(--border-subtle)',
-            color: accent ?? 'var(--text)',
-            border: `1px solid ${accent ? `${accent}40` : 'var(--border)'}`,
-          }}
-        >
-          <span>{v}</span>
+    <div className="relative">
+      <div className="relative flex items-center">
+        <input
+          className="app-input pr-8"
+          value={value}
+          disabled={disabled}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        {!disabled && (
           <button
             type="button"
-            onClick={() => onChange(values.filter((x) => x !== v))}
-            aria-label={`Remove ${v}`}
-            className="grid h-4 w-4 place-items-center rounded-pill opacity-70 transition duration-fast ease-standard hover:opacity-100 active:scale-[0.95]"
+            onClick={() => setOpen(!open)}
+            title="Pilih Bulan & Tahun"
+            aria-label="Pilih Bulan & Tahun"
+            className="absolute right-2 grid h-6 w-6 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:text-[var(--primary)] active:scale-[0.95]"
           >
-            <X size={11} />
+            <span className="text-xs">📅</span>
           </button>
-        </span>
-      ))}
-      <div className="flex min-w-[140px] flex-1 items-center px-1">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              add();
-            } else if (e.key === 'Backspace' && !draft && values.length) {
-              onChange(values.slice(0, -1));
-            }
-          }}
-          placeholder={placeholder}
-          className="w-full bg-transparent text-base leading-normal outline-none text-[var(--text)] placeholder:text-[var(--text-muted)]"
-        />
+        )}
       </div>
+
+      {open && (
+        <div className="absolute right-0 z-30 mt-1 w-64 rounded-card border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm">
+          <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-1.5">
+            <span className="text-xs font-semibold text-[var(--text)]">Pilih Bulan & Tahun</span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+            >
+              Tutup
+            </button>
+          </div>
+
+          {showPresent && (
+            <div className="mb-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  onChange('Sekarang');
+                  setOpen(false);
+                }}
+                className="w-full rounded-control border border-[var(--primary)] bg-[var(--primary)]/10 py-1 text-center text-xs font-medium text-[var(--primary)] transition duration-fast hover:bg-[var(--primary)]/20 active:scale-[0.98]"
+              >
+                ⚡ Sekarang / Present
+              </button>
+            </div>
+          )}
+
+          <div className="mb-2">
+            <div className="mb-1 text-[11px] font-medium text-[var(--text-muted)]">Bulan:</div>
+            <div className="grid grid-cols-4 gap-1">
+              {MONTHS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMonth(m);
+                    if (selectedYear) pick(m, selectedYear);
+                  }}
+                  className={`rounded-control py-1 text-center text-xs transition duration-fast ${
+                    selectedMonth === m
+                      ? 'bg-[var(--primary)] font-semibold text-white'
+                      : 'bg-[var(--surface-pearl)] text-[var(--text)] hover:bg-[var(--border-subtle)]'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 text-[11px] font-medium text-[var(--text-muted)]">Tahun:</div>
+            <div className="grid grid-cols-4 gap-1">
+              {YEARS.map((y) => (
+                <button
+                  key={y}
+                  type="button"
+                  onClick={() => {
+                    setSelectedYear(String(y));
+                    if (selectedMonth) pick(selectedMonth, String(y));
+                    else onChange(String(y));
+                  }}
+                  className={`rounded-control py-1 text-center text-xs transition duration-fast ${
+                    selectedYear === String(y)
+                      ? 'bg-[var(--primary)] font-semibold text-white'
+                      : 'bg-[var(--surface-pearl)] text-[var(--text)] hover:bg-[var(--border-subtle)]'
+                  }`}
+                >
+                  {y}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -111,6 +300,9 @@ export function AccordionSection({
   onToggle,
   visible,
   onVisibleChange,
+  customTitle,
+  onCustomTitleChange,
+  onResetCustomTitle,
   children,
 }: {
   title: string;
@@ -119,19 +311,91 @@ export function AccordionSection({
   onToggle: () => void;
   visible?: boolean;
   onVisibleChange?: (v: boolean) => void;
+  customTitle?: string;
+  onCustomTitleChange?: (v: string) => void;
+  onResetCustomTitle?: () => void;
   children: ReactNode;
 }) {
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+
+  const displayTitle = customTitle || title;
+
   return (
     <div className="overflow-hidden rounded-card border border-[var(--border)] bg-[var(--surface)]">
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex flex-1 items-center gap-2 text-left transition duration-fast ease-standard active:scale-[0.98]"
-        >
+        <div className="flex flex-1 items-center gap-2">
           <span className="text-[var(--text-muted)]">{icon}</span>
-          <span className="text-lg font-semibold tracking-[-0.374px] text-[var(--text)]">{title}</span>
-        </button>
+          {editingTitle ? (
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <input
+                className="app-input h-8 px-2 py-0.5 text-sm font-semibold"
+                value={titleDraft}
+                autoFocus
+                onChange={(e) => setTitleDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    if (onCustomTitleChange) onCustomTitleChange(titleDraft.trim());
+                    setEditingTitle(false);
+                  } else if (e.key === 'Escape') {
+                    setEditingTitle(false);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (onCustomTitleChange) onCustomTitleChange(titleDraft.trim());
+                  setEditingTitle(false);
+                }}
+                title="Simpan nama judul"
+                className="rounded-control bg-[var(--primary)] px-2.5 py-1 text-xs font-semibold text-white"
+              >
+                Simpan
+              </button>
+              {customTitle && onResetCustomTitle && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onResetCustomTitle();
+                    setEditingTitle(false);
+                  }}
+                  title="Kembalikan ke default"
+                  className="rounded-control border border-[var(--border)] px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onToggle}
+                className="text-left transition duration-fast ease-standard active:scale-[0.98]"
+              >
+                <span className="text-lg font-semibold tracking-[-0.374px] text-[var(--text)]">
+                  {displayTitle}
+                </span>
+              </button>
+              {onCustomTitleChange && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTitleDraft(displayTitle);
+                    setEditingTitle(true);
+                  }}
+                  title="Ubah judul section"
+                  aria-label="Ubah judul section"
+                  className="grid h-6 w-6 place-items-center rounded-control text-[var(--text-muted)] opacity-60 transition duration-fast ease-standard hover:opacity-100 hover:text-[var(--primary)]"
+                >
+                  <span className="text-xs">✏️</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {onVisibleChange && (
             <Toggle

@@ -154,7 +154,7 @@ function Experience({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.experience || !items.length) return null;
   return (
     <section id="cv-section-experience" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Experience</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.experience || 'Experience'}</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((e) => (
           <div key={e.id}>
@@ -178,7 +178,7 @@ function Projects({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.projects || !items.length) return null;
   return (
     <section id="cv-section-projects" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Projects</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.projects || 'Projects'}</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((p) => (
           <div key={p.id}>
@@ -205,7 +205,7 @@ function Education({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.education || !items.length) return null;
   return (
     <section id="cv-section-education" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Education</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.education || 'Education'}</SectionTitle>
       <div className="space-y-[var(--gap)]">
         {items.map((e) => (
           <div key={e.id} className="flex items-baseline justify-between">
@@ -226,7 +226,7 @@ function Certifications({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.certifications || !items.length) return null;
   return (
     <section id="cv-section-certifications" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Certifications</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.certifications || 'Certifications'}</SectionTitle>
       <ul className="space-y-0.5 text-[11.5px] text-slate-700">
         {items.map((c) => <li key={c.id}>{c.name}{c.issuer && ` — ${c.issuer}`}{c.date && ` (${c.date})`}</li>)}
       </ul>
@@ -239,7 +239,7 @@ function Honors({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.honors || !items.length) return null;
   return (
     <section id="cv-section-honors" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Honors & Achievements</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.honors || 'Honors & Achievements'}</SectionTitle>
       <ul className="space-y-0.5 text-[11.5px] text-slate-700">
         {items.map((h) => <li key={h.id}><span className="font-medium">{h.title}</span>{h.issuer && ` — ${h.issuer}`}{h.date && ` (${h.date})`}{h.description && <span className="text-slate-600"> · {h.description}</span>}</li>)}
       </ul>
@@ -251,7 +251,7 @@ function Skills({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.skills || !cv.skills.length) return null;
   return (
     <section id="cv-section-skills" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Skills</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.skills || 'Skills'}</SectionTitle>
       <div className="space-y-1">
         {cv.skills.map((g) => (
           <div key={g.id} className="text-[11.5px]">
@@ -268,7 +268,7 @@ function Summary({ cv }: { cv: CVData }) {
   if (!cv.sectionVisibility.summary || !cv.summary.trim()) return null;
   return (
     <section id="cv-section-summary" style={{ marginBottom: 'var(--sec)' }}>
-      <SectionTitle>Summary</SectionTitle>
+      <SectionTitle>{cv.sectionLabels?.summary || 'Summary'}</SectionTitle>
       <p className="text-[11.5px] leading-[var(--line)] text-slate-700">{cv.summary}</p>
     </section>
   );
@@ -348,7 +348,7 @@ function CreativeTemplate({ cv }: TplProps) {
         </div>
         {cv.sectionVisibility.skills && !!cv.skills.length && (
           <div className="mt-5">
-            <h2 className="mb-1.5 text-[11px] font-bold uppercase tracking-wider">Skills</h2>
+            <h2 className="mb-1.5 text-[11px] font-bold uppercase tracking-wider">{cv.sectionLabels?.skills || 'Skills'}</h2>
             {cv.skills.map((g) => (
               <div key={g.id} className="mb-1.5 text-[10.5px]">
                 <div className="font-semibold">{g.category}</div>

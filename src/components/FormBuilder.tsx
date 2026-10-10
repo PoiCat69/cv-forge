@@ -8,8 +8,15 @@ import type {
 } from '../types/cv';
 import { uid } from '../lib/defaults';
 import { polishSummary, suggestBullet } from '../lib/polish';
-import { AccordionSection, Field, TagInput, AddButton } from './ui';
+import { AccordionSection, Field, TagInput, AddButton, DateInput, DEFAULT_SKILL_SUGGESTIONS } from './ui';
 import { AvatarUploader } from './AvatarUploader';
+
+function formatLink(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^(https?:\/\/|mailto:)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
 
 type SetCV = (updater: (cv: CVData) => CVData) => void;
 
@@ -194,15 +201,25 @@ export function FormBuilder({
             <Field label="Email"><input className="app-input" value={cv.personal.email} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, email: e.target.value } }))} placeholder="jane@example.com" /></Field>
             <Field label="Phone"><input className="app-input" value={cv.personal.phone} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, phone: e.target.value } }))} placeholder="+1 555 000 1234" /></Field>
             <Field label="Location"><input className="app-input" value={cv.personal.location} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, location: e.target.value } }))} placeholder="City, Country" /></Field>
-            <Field label="Website"><input className="app-input" value={cv.personal.website} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, website: e.target.value } }))} placeholder="yoursite.dev" /></Field>
-            <Field label="LinkedIn"><input className="app-input" value={cv.personal.linkedin} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, linkedin: e.target.value } }))} placeholder="linkedin.com/in/you" /></Field>
-            <Field label="GitHub"><input className="app-input" value={cv.personal.github} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, github: e.target.value } }))} placeholder="github.com/you" /></Field>
+            <Field label="Website"><input className="app-input" value={cv.personal.website} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, website: e.target.value } }))} onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, website: formatLink(e.target.value) } }))} placeholder="yoursite.dev" /></Field>
+            <Field label="LinkedIn"><input className="app-input" value={cv.personal.linkedin} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, linkedin: e.target.value } }))} onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, linkedin: formatLink(e.target.value) } }))} placeholder="linkedin.com/in/you" /></Field>
+            <Field label="GitHub"><input className="app-input" value={cv.personal.github} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, github: e.target.value } }))} onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, github: formatLink(e.target.value) } }))} placeholder="github.com/you" /></Field>
           </div>
         </div>
       </AccordionSection>
 
       {/* 2. Summary ---------------------------------------------------------- */}
-      <AccordionSection title="Professional Summary" icon={<FileText size={18} />} open={!!open.summary} onToggle={() => toggle('summary')} visible={vis.summary} onVisibleChange={(v) => setVis('summary', v)}>
+      <AccordionSection
+        title="Professional Summary"
+        customTitle={cv.sectionLabels?.summary}
+        onCustomTitleChange={(v) => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, summary: v } }))}
+        onResetCustomTitle={() => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, summary: undefined } }))}
+        icon={<FileText size={18} />}
+        open={!!open.summary}
+        onToggle={() => toggle('summary')}
+        visible={vis.summary}
+        onVisibleChange={(v) => setVis('summary', v)}
+      >
         <div className="space-y-3" onFocus={() => onActiveSectionChange?.('summary')}>
           <Field label="Professional summary" hint="3-4 sentences highlighting impact, domain expertise, and career trajectory">
             <textarea
@@ -212,18 +229,36 @@ export function FormBuilder({
               onChange={(e) => setCV((c) => ({ ...c, summary: e.target.value }))}
             />
           </Field>
-          <button
-            type="button"
-            className="btn btn-outline rounded-pill px-4 py-1.5 text-xs text-[var(--primary)] hover:border-[var(--primary)] active:scale-[0.95]"
-            onClick={() => setCV((c) => ({ ...c, summary: polishSummary(c.summary) }))}
-          >
-            <Sparkles size={14} /> <span>Polish writing</span>
-          </button>
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-[var(--text-muted)]">
+            <span>
+              {cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0} kata · {cv.summary.length} karakter{' '}
+              <span className={(cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0) >= 40 && (cv.summary.trim() ? cv.summary.trim().split(/\s+/).length : 0) <= 80 ? 'font-medium text-emerald-600 dark:text-emerald-400' : ''}>
+                (Saran ATS: 40–80 kata)
+              </span>
+            </span>
+            <button
+              type="button"
+              className="btn btn-outline rounded-pill px-4 py-1.5 text-xs text-[var(--primary)] hover:border-[var(--primary)] active:scale-[0.95]"
+              onClick={() => setCV((c) => ({ ...c, summary: polishSummary(c.summary) }))}
+            >
+              <Sparkles size={14} /> <span>Polish writing</span>
+            </button>
+          </div>
         </div>
       </AccordionSection>
 
       {/* 3. Experience ------------------------------------------------------ */}
-      <AccordionSection title="Work & Leadership Experience" icon={<Briefcase size={18} />} open={!!open.experience} onToggle={() => toggle('experience')} visible={vis.experience} onVisibleChange={(v) => setVis('experience', v)}>
+      <AccordionSection
+        title="Work & Leadership Experience"
+        customTitle={cv.sectionLabels?.experience}
+        onCustomTitleChange={(v) => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, experience: v } }))}
+        onResetCustomTitle={() => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, experience: undefined } }))}
+        icon={<Briefcase size={18} />}
+        open={!!open.experience}
+        onToggle={() => toggle('experience')}
+        visible={vis.experience}
+        onVisibleChange={(v) => setVis('experience', v)}
+      >
         <div className="space-y-4" onFocus={() => onActiveSectionChange?.('experience')}>
           {cv.experience.map((item, i) => (
             <ExperienceEditor
@@ -247,7 +282,17 @@ export function FormBuilder({
       </AccordionSection>
 
       {/* 4. Projects -------------------------------------------------------- */}
-      <AccordionSection title="Selected Projects" icon={<FolderGit2 size={18} />} open={!!open.projects} onToggle={() => toggle('projects')} visible={vis.projects} onVisibleChange={(v) => setVis('projects', v)}>
+      <AccordionSection
+        title="Selected Projects"
+        customTitle={cv.sectionLabels?.projects}
+        onCustomTitleChange={(v) => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, projects: v } }))}
+        onResetCustomTitle={() => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, projects: undefined } }))}
+        icon={<FolderGit2 size={18} />}
+        open={!!open.projects}
+        onToggle={() => toggle('projects')}
+        visible={vis.projects}
+        onVisibleChange={(v) => setVis('projects', v)}
+      >
         <div className="space-y-4" onFocus={() => onActiveSectionChange?.('projects')}>
           {cv.projects.map((item, i) => (
             <ProjectEditor
@@ -272,7 +317,17 @@ export function FormBuilder({
       </AccordionSection>
 
       {/* 5. Education + Certs ---------------------------------------------- */}
-      <AccordionSection title="Education & Certifications" icon={<GraduationCap size={18} />} open={!!open.education} onToggle={() => toggle('education')} visible={vis.education} onVisibleChange={(v) => setVis('education', v)}>
+      <AccordionSection
+        title="Education & Certifications"
+        customTitle={cv.sectionLabels?.education}
+        onCustomTitleChange={(v) => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, education: v } }))}
+        onResetCustomTitle={() => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, education: undefined } }))}
+        icon={<GraduationCap size={18} />}
+        open={!!open.education}
+        onToggle={() => toggle('education')}
+        visible={vis.education}
+        onVisibleChange={(v) => setVis('education', v)}
+      >
         <div className="space-y-4" onFocus={() => onActiveSectionChange?.('education')}>
           {cv.education.map((item, i) => (
             <EducationEditor
@@ -324,10 +379,10 @@ export function FormBuilder({
                       onDeleteToast?.('Sertifikasi dihapus');
                     }}
                   />
-                  <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[1fr_1fr_96px]">
+                  <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[1fr_1fr_130px]">
                     <input className="app-input" placeholder="Certificate" value={item.name} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, name: e.target.value } : x)) }))} />
                     <input className="app-input" placeholder="Issuer" value={item.issuer} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, issuer: e.target.value } : x)) }))} />
-                    <input className="app-input" placeholder="Year" value={item.date} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, date: e.target.value } : x)) }))} />
+                    <DateInput placeholder="Year" value={item.date} onChange={(val) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, date: val } : x)) }))} />
                   </div>
                 </div>
               ))}
@@ -338,7 +393,17 @@ export function FormBuilder({
       </AccordionSection>
 
       {/* 6. Skills ---------------------------------------------------------- */}
-      <AccordionSection title="Technical & Soft Skills" icon={<Wrench size={18} />} open={!!open.skills} onToggle={() => toggle('skills')} visible={vis.skills} onVisibleChange={(v) => setVis('skills', v)}>
+      <AccordionSection
+        title="Technical & Soft Skills"
+        customTitle={cv.sectionLabels?.skills}
+        onCustomTitleChange={(v) => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, skills: v } }))}
+        onResetCustomTitle={() => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, skills: undefined } }))}
+        icon={<Wrench size={18} />}
+        open={!!open.skills}
+        onToggle={() => toggle('skills')}
+        visible={vis.skills}
+        onVisibleChange={(v) => setVis('skills', v)}
+      >
         <div className="space-y-4" onFocus={() => onActiveSectionChange?.('skills')}>
           {cv.skills.map((grp, i) => (
             <div
@@ -372,7 +437,8 @@ export function FormBuilder({
               <TagInput
                 values={grp.skills}
                 accent={accent}
-                placeholder="Add skill + Enter"
+                suggestions={DEFAULT_SKILL_SUGGESTIONS}
+                placeholder="Add skill + Enter (contoh: React, Python)"
                 onChange={(skills) => setCV((c) => ({ ...c, skills: c.skills.map((x) => (x.id === grp.id ? { ...x, skills } : x)) }))}
               />
             </div>
@@ -382,7 +448,17 @@ export function FormBuilder({
       </AccordionSection>
 
       {/* 7. Honors ---------------------------------------------------------- */}
-      <AccordionSection title="Honors & Achievements" icon={<Award size={18} />} open={!!open.honors} onToggle={() => toggle('honors')} visible={vis.honors} onVisibleChange={(v) => setVis('honors', v)}>
+      <AccordionSection
+        title="Honors & Achievements"
+        customTitle={cv.sectionLabels?.honors}
+        onCustomTitleChange={(v) => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, honors: v } }))}
+        onResetCustomTitle={() => setCV((c) => ({ ...c, sectionLabels: { ...c.sectionLabels, honors: undefined } }))}
+        icon={<Award size={18} />}
+        open={!!open.honors}
+        onToggle={() => toggle('honors')}
+        visible={vis.honors}
+        onVisibleChange={(v) => setVis('honors', v)}
+      >
         <div className="space-y-4" onFocus={() => onActiveSectionChange?.('honors')}>
           {cv.honors.map((item, i) => (
             <div
@@ -412,10 +488,10 @@ export function FormBuilder({
                   onDeleteToast?.('Penghargaan dihapus');
                 }}
               />
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_96px]">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_130px]">
                 <input className="app-input" placeholder="Honor / award" value={item.title} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, title: e.target.value } : x)) }))} />
                 <input className="app-input" placeholder="Issuer" value={item.issuer} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, issuer: e.target.value } : x)) }))} />
-                <input className="app-input" placeholder="Year" value={item.date} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, date: e.target.value } : x)) }))} />
+                <DateInput placeholder="Year" value={item.date} onChange={(val) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, date: val } : x)) }))} />
               </div>
               <input className="app-input" placeholder="One-line description (optional)" value={item.description} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, description: e.target.value } : x)) }))} />
             </div>
@@ -480,8 +556,8 @@ function ExperienceEditor({
         <input className="app-input" placeholder="Company" value={item.company} onChange={(e) => onChange({ company: e.target.value })} />
         <input className="app-input" placeholder="Location" value={item.location} onChange={(e) => onChange({ location: e.target.value })} />
         <div className="grid grid-cols-2 gap-2">
-          <input className="app-input" placeholder="Start date" value={item.startDate} onChange={(e) => onChange({ startDate: e.target.value })} />
-          <input className="app-input" placeholder="End date" value={item.endDate} disabled={item.current} onChange={(e) => onChange({ endDate: e.target.value })} />
+          <DateInput placeholder="Start date" value={item.startDate} onChange={(val) => onChange({ startDate: val })} />
+          <DateInput placeholder="End date" value={item.endDate} disabled={item.current} showPresent={true} onChange={(val) => onChange({ endDate: val })} />
         </div>
       </div>
       <label className="flex items-center gap-2 text-sm text-[var(--text)] cursor-pointer">
@@ -498,7 +574,7 @@ function BulletEditor({ bullets, onChange }: { bullets: string[]; onChange: (b: 
     <div className="space-y-2 pt-1">
       <div className="flex items-center justify-between">
         <span className="text-xs font-semibold text-[var(--text)]">Bullet points</span>
-        <span className="text-xs text-[var(--text-muted)]">XYZ formula: Accomplished [X] by doing [Z]</span>
+        <span className="text-xs text-[var(--text-muted)]">Tekan Enter untuk baris baru · Tempel multi-baris otomatis terpisah</span>
       </div>
       {bullets.map((b, i) => (
         <div key={i} className="animate-item-enter flex items-start gap-2">
@@ -507,6 +583,29 @@ function BulletEditor({ bullets, onChange }: { bullets: string[]; onChange: (b: 
             value={b}
             placeholder="Increased signup conversion by 23% by redesigning onboarding…"
             onChange={(e) => onChange(bullets.map((x, j) => (j === i ? e.target.value : x)))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const next = [...bullets];
+                next.splice(i + 1, 0, '');
+                onChange(next);
+              }
+            }}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData('text');
+              if (text.includes('\n') || text.includes('•') || text.includes('- ') || text.includes('* ')) {
+                const lines = text
+                  .split(/\r?\n/)
+                  .map((l) => l.replace(/^[\s•\-\*]+/, '').trim())
+                  .filter(Boolean);
+                if (lines.length > 1) {
+                  e.preventDefault();
+                  const next = [...bullets];
+                  next.splice(i, 1, ...lines);
+                  onChange(next);
+                }
+              }
+            }}
           />
           <div className="flex flex-col gap-2 pt-0.5">
             <button
@@ -590,10 +689,16 @@ function ProjectEditor({
       />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <input className="app-input" placeholder="Project title" value={item.title} onChange={(e) => onChange({ title: e.target.value })} />
-        <input className="app-input" placeholder="Demo / repo link" value={item.link} onChange={(e) => onChange({ link: e.target.value })} />
+        <input
+          className="app-input"
+          placeholder="Demo / repo link"
+          value={item.link}
+          onChange={(e) => onChange({ link: e.target.value })}
+          onBlur={(e) => onChange({ link: formatLink(e.target.value) })}
+        />
       </div>
       <input className="app-input" placeholder="One-line description" value={item.description} onChange={(e) => onChange({ description: e.target.value })} />
-      <Field label="Tech stack"><TagInput values={item.tech} accent={accent} placeholder="React + Enter" onChange={(tech) => onChange({ tech })} /></Field>
+      <Field label="Tech stack"><TagInput values={item.tech} accent={accent} suggestions={DEFAULT_SKILL_SUGGESTIONS} placeholder="React + Enter" onChange={(tech) => onChange({ tech })} /></Field>
       <Field label="Key achievements"><TagInput values={item.achievements} placeholder="3k stars + Enter" onChange={(achievements) => onChange({ achievements })} /></Field>
     </div>
   );
@@ -651,8 +756,8 @@ function EducationEditor({
           <input className="app-input" placeholder="Field" value={item.field} onChange={(e) => onChange({ field: e.target.value })} />
         </div>
         <div className="grid grid-cols-2 gap-2">
-          <input className="app-input" placeholder="Start year" value={item.startDate} onChange={(e) => onChange({ startDate: e.target.value })} />
-          <input className="app-input" placeholder="End year" value={item.endDate} disabled={item.current} onChange={(e) => onChange({ endDate: e.target.value })} />
+          <DateInput placeholder="Start year" value={item.startDate} onChange={(val) => onChange({ startDate: val })} />
+          <DateInput placeholder="End year" value={item.endDate} disabled={item.current} showPresent={true} onChange={(val) => onChange({ endDate: val })} />
         </div>
         <input className="app-input" placeholder="Details (GPA, honors)" value={item.details} onChange={(e) => onChange({ details: e.target.value })} />
       </div>
