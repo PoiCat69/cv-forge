@@ -15,12 +15,15 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold app-muted">
-        {label}
+      <span className="mb-2 flex items-center gap-2 text-sm font-semibold tracking-[-0.224px] text-[var(--text)]">
+        <span>{label}</span>
         {hint && (
-          <span className="group relative inline-flex">
-            <Info size={13} className="cursor-help opacity-70" />
-            <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 w-52 -translate-x-1/2 rounded-md border p-2 text-[11px] font-normal leading-snug opacity-0 shadow-lg transition group-hover:opacity-100 app-surface">
+          <span className="group relative inline-flex items-center">
+            <Info size={14} className="cursor-help text-[var(--text-muted)] transition-colors duration-base ease-standard hover:text-[var(--primary)]" />
+            <span
+              role="tooltip"
+              className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-56 -translate-x-1/2 rounded-control border border-[var(--border)] bg-[var(--surface)] p-3 text-xs font-normal leading-normal text-[var(--text)] opacity-0 transition-opacity duration-base ease-standard group-hover:opacity-100 group-focus-within:opacity-100"
+            >
               {hint}
             </span>
           </span>
@@ -32,7 +35,7 @@ export function Field({
 }
 
 // --------------------------------------------------------------------------
-// Tag / pill creator
+// Tag / pill creator (Input control: radius 8px, tags: radius pill 9999px)
 // --------------------------------------------------------------------------
 export function TagInput({
   values,
@@ -54,23 +57,31 @@ export function TagInput({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 rounded-lg border p-2 app-surface" style={{ borderColor: 'var(--border)' }}>
+    <div
+      className="flex min-h-[44px] flex-wrap items-center gap-2 rounded-control border border-[var(--border)] bg-[var(--surface)] p-2 transition-colors duration-base ease-standard focus-within:border-[var(--primary)] focus-within:ring-2 focus-within:ring-[var(--primary-focus)]"
+    >
       {values.map((v) => (
         <span
           key={v}
           className="chip"
           style={{
-            background: accent ? `${accent}1a` : 'var(--surface-2)',
+            background: accent ? `${accent}18` : 'var(--border-subtle)',
             color: accent ?? 'var(--text)',
+            border: `1px solid ${accent ? `${accent}40` : 'var(--border)'}`,
           }}
         >
-          {v}
-          <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`}>
-            <X size={12} />
+          <span>{v}</span>
+          <button
+            type="button"
+            onClick={() => onChange(values.filter((x) => x !== v))}
+            aria-label={`Remove ${v}`}
+            className="grid h-4 w-4 place-items-center rounded-pill opacity-70 transition duration-fast ease-standard hover:opacity-100 active:scale-[0.95]"
+          >
+            <X size={11} />
           </button>
         </span>
       ))}
-      <div className="flex min-w-[120px] flex-1 items-center">
+      <div className="flex min-w-[140px] flex-1 items-center px-1">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -83,8 +94,7 @@ export function TagInput({
             }
           }}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm outline-none"
-          style={{ color: 'var(--text)' }}
+          className="w-full bg-transparent text-base leading-normal outline-none text-[var(--text)] placeholder:text-[var(--text-muted)]"
         />
       </div>
     </div>
@@ -92,7 +102,7 @@ export function TagInput({
 }
 
 // --------------------------------------------------------------------------
-// Accordion section
+// Accordion section (Store Utility Card: radius-card 12px, padding 16-24px)
 // --------------------------------------------------------------------------
 export function AccordionSection({
   title,
@@ -112,17 +122,17 @@ export function AccordionSection({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border app-surface" style={{ borderColor: 'var(--border)' }}>
-      <div className="flex items-center pr-2">
+    <div className="overflow-hidden rounded-card border border-[var(--border)] bg-[var(--surface)]">
+      <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <button
           type="button"
           onClick={onToggle}
-          className="flex flex-1 items-center gap-2.5 py-3 pl-4 pr-2 text-left"
+          className="flex flex-1 items-center gap-2 text-left transition duration-fast ease-standard active:scale-[0.98]"
         >
-          <span className="app-muted">{icon}</span>
-          <span className="text-sm font-semibold">{title}</span>
+          <span className="text-[var(--text-muted)]">{icon}</span>
+          <span className="text-lg font-semibold tracking-[-0.374px] text-[var(--text)]">{title}</span>
         </button>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {onVisibleChange && (
             <Toggle
               checked={visible ?? true}
@@ -133,24 +143,28 @@ export function AccordionSection({
           <button
             type="button"
             onClick={onToggle}
-            aria-label={open ? 'Collapse section' : 'Expand section'}
-            className="btn btn-ghost grid h-7 w-7 place-items-center p-0"
+            aria-label={open ? `Collapse ${title}` : `Expand ${title}`}
+            className="grid h-10 w-10 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] active:scale-[0.95]"
           >
             <ChevronDown
               size={18}
-              className="app-muted transition-transform"
+              className="transition-transform duration-base ease-standard"
               style={{ transform: open ? 'rotate(180deg)' : 'none' }}
             />
           </button>
         </div>
       </div>
-      {open && <div className="animate-fade-in border-t px-4 py-4" style={{ borderColor: 'var(--border)' }}>{children}</div>}
+      {open && (
+        <div className="animate-dropdown-enter border-t border-[var(--border)] p-4 sm:p-6">
+          {children}
+        </div>
+      )}
     </div>
   );
 }
 
 // --------------------------------------------------------------------------
-// Toggle switch
+// Toggle switch (radius-pill / kontrol 44px hit-box)
 // --------------------------------------------------------------------------
 export function Toggle({
   checked,
@@ -162,36 +176,41 @@ export function Toggle({
   srLabel: string;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={srLabel}
-      onClick={() => onChange(!checked)}
-      className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full px-0.5 transition-colors"
-      style={{ background: checked ? 'var(--ring)' : 'var(--border)' }}
-    >
-      <span
-        className="h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200"
-        style={{ transform: checked ? 'translateX(16px)' : 'translateX(0)' }}
-      />
-    </button>
+    <div className="flex items-center justify-center min-h-[44px] min-w-[44px]">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={srLabel}
+        onClick={() => onChange(!checked)}
+        className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-pill p-0.5 transition-colors duration-base ease-standard active:scale-[0.95]"
+        style={{
+          background: checked ? 'var(--primary)' : 'var(--border)',
+        }}
+      >
+        <span
+          className="h-5 w-5 rounded-pill bg-white transition-transform duration-base ease-standard"
+          style={{
+            transform: checked ? 'translateX(20px)' : 'translateX(0)',
+          }}
+        />
+      </button>
+    </div>
   );
 }
 
 // --------------------------------------------------------------------------
-// "Add item" button
+// "Add item" button (Pill / aksi sekunder)
 // --------------------------------------------------------------------------
 export function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="btn btn-outline w-full border-dashed"
-      style={{ borderColor: 'var(--border)' }}
+      className="btn btn-outline min-h-[40px] w-full rounded-pill border border-dashed border-[var(--border)] text-sm text-[var(--primary)] transition duration-fast ease-standard hover:border-[var(--primary)] hover:bg-[var(--surface-pearl)] active:scale-[0.95]"
     >
       <Plus size={16} />
-      {label}
+      <span>{label}</span>
     </button>
   );
 }
