@@ -44,15 +44,18 @@ export function CVPreview({
     return () => ro.disconnect();
   }, [forPrint, cv, custom, onPageCountChange]);
 
+  const fontScale = custom.fontSizeScale ?? 1;
+  const marginScale = custom.marginScale ?? 1;
+
   const style: CSSProperties = {
     width: A4_W,
     minHeight: A4_H,
     fontFamily: font,
     // custom props consumed by template CSS via inline style vars
     ['--accent' as string]: custom.accent,
-    ['--line' as string]: String(d.line),
-    ['--gap' as string]: `${d.gap}rem`,
-    ['--sec' as string]: `${d.section}rem`,
+    ['--line' as string]: String(Number((d.line * fontScale).toFixed(2))),
+    ['--gap' as string]: `${(d.gap * marginScale).toFixed(3)}rem`,
+    ['--sec' as string]: `${(d.section * marginScale).toFixed(3)}rem`,
   };
 
   const Template = TEMPLATE_MAP[custom.template];

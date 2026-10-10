@@ -14,8 +14,9 @@ export function KeyboardShortcutsModal({
     { key: 'Ctrl + Shift + Z / Ctrl + Y', desc: 'Ulangi perubahan (Redo)' },
     { key: 'Ctrl + P', desc: 'Cetak CV (Native Print A4)' },
     { key: 'Ctrl + S', desc: 'Ekspor dokumen ke PDF' },
+    { key: 'F10', desc: 'Beralih Mode Fokus (bebas gangguan)' },
     { key: 'Ctrl + /', desc: 'Buka panduan pintasan keyboard ini' },
-    { key: 'Esc', desc: 'Tutup modal / pop-up aktif' },
+    { key: 'Esc', desc: 'Tutup modal atau keluar Mode Fokus' },
   ];
 
   return (

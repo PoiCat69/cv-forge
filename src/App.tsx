@@ -35,7 +35,9 @@ export default function App() {
     deleteVersion,
   } = useCVVersions(state, setState);
 
-  const { theme, toggle } = useTheme();
+  const { theme, themeMode, cycleTheme } = useTheme();
+  const [focusMode, setFocusMode] = useState(false);
+  const [mobileTab, setMobileTab] = useState<'form' | 'preview'>('form');
   const [showForm, setShowForm] = useState(true);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
@@ -46,6 +48,20 @@ export default function App() {
   const [toast, setToast] = useState<ToastData | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
+
+  // Focus Mode toggle via F10 or Escape
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      if (e.key === 'F10') {
+        e.preventDefault();
+        setFocusMode((v) => !v);
+      } else if (e.key === 'Escape' && focusMode) {
+        setFocusMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, [focusMode]);
 
   const setCV = useCallback(
     (updater: (cv: CVData) => CVData) => setState((s) => ({ ...s, cv: updater(s.cv) })),
@@ -260,6 +276,20 @@ export default function App() {
             {showForm ? <PanelLeftClose size={17} /> : <PanelLeft size={17} />}
           </button>
 
+          {/* Focus Mode Trigger */}
+          <button
+            type="button"
+            className={`btn btn-outline rounded-pill px-3 py-1.5 text-sm active:scale-[0.95] ${
+              focusMode ? 'border-[var(--primary)] text-[var(--primary)] bg-[var(--primary)]/10 font-semibold' : ''
+            }`}
+            onClick={() => setFocusMode((v) => !v)}
+            title={focusMode ? 'Keluar Mode Fokus (Esc)' : 'Mode Fokus (Fokus menulis formulir - F10)'}
+            aria-label="Mode Fokus"
+          >
+            {focusMode ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+            <span className="hidden xl:inline">{focusMode ? 'Keluar Fokus' : 'Fokus'}</span>
+          </button>
+
           {/* Design Modal Trigger */}
           <button
             type="button"
@@ -342,25 +372,98 @@ export default function App() {
             <HelpCircle size={16} />
           </button>
 
-          {/* Theme Toggle */}
+          {/* Theme Toggle (System / Light / Dark) */}
           <button
             type="button"
-            className="btn btn-ghost grid h-10 w-10 place-items-center rounded-control p-0 text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
-            onClick={toggle}
-            title="Toggle theme"
-            aria-label="Toggle color theme"
+            className="btn btn-ghost flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
+            onClick={cycleTheme}
+            title={`Tema: ${themeMode === 'system' ? 'Sistem OS' : themeMode === 'dark' ? 'Gelap' : 'Terang'} (Klik untuk beralih)`}
+            aria-label="Ganti tema warna"
           >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            {themeMode === 'system' ? (
+              <span className="text-[13px]">💻</span>
+            ) : theme === 'dark' ? (
+              <Sun size={15} />
+            ) : (
+              <Moon size={15} />
+            )}
+            <span className="hidden sm:inline capitalize text-[11px] font-medium">
+              {themeMode === 'system' ? 'Sistem' : themeMode === 'dark' ? 'Gelap' : 'Terang'}
+            </span>
           </button>
         </div>
       </header>
 
+      {/* Mobile Segmented Tab: Form vs Preview */}
+      {!focusMode && (
+        <div className="flex lg:hidden items-center border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 shrink-0">
+          <div className="flex w-full rounded-pill bg-[var(--surface-pearl)] p-0.5 border border-[var(--border)]">
+            <button
+              type="button"
+              onClick={() => setMobileTab('form')}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-pill py-1.5 text-xs font-semibold transition duration-fast ${
+                mobileTab === 'form'
+                  ? 'bg-[var(--primary)] text-white shadow-sm'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+              }`}
+            >
+              <span>📝 Formulir</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('preview')}
+              className={`flex flex-1 items-center justify-center gap-1.5 rounded-pill py-1.5 text-xs font-semibold transition duration-fast ${
+                mobileTab === 'preview'
+                  ? 'bg-[var(--primary)] text-white shadow-sm'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+              }`}
+            >
+              <span>👁️ Pratinjau ({pageCount} Hal)</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ---------------- 2. Split Workspace Body ---------------- */}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Left pane: Form Builder */}
-        {showForm && (
+      {focusMode ? (
+        <div className="scroll-slim flex min-h-0 flex-1 overflow-y-auto p-4 sm:p-8" style={{ background: 'var(--bg)' }}>
+          <div className="mx-auto w-full max-w-3xl space-y-4">
+            <div className="flex items-center justify-between rounded-control border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-4 py-2.5 text-xs font-medium text-[var(--primary)]">
+              <span className="flex items-center gap-2">
+                <Maximize2 size={13} />
+                <span>Mode Fokus Aktif · Menulis tanpa gangguan</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setFocusMode(false)}
+                className="rounded-pill bg-[var(--primary)] px-3 py-1 font-semibold text-white shadow-sm transition hover:opacity-90 active:scale-[0.95]"
+              >
+                Keluar Fokus (Esc)
+              </button>
+            </div>
+            <FormBuilder
+              cv={state.cv}
+              setCV={setCV}
+              accent={state.customization.accent}
+              onActiveSectionChange={handleActiveSectionChange}
+              onDeleteToast={(msg) => {
+                commitSnapshot();
+                setToast({
+                  id: String(Date.now()),
+                  message: msg,
+                  onUndo: undo,
+                });
+              }}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+          {/* Left pane: Form Builder */}
           <div
-            className="scroll-slim w-full overflow-y-auto border-r p-4 sm:p-6 lg:w-[46%] lg:max-w-[640px]"
+            className={`scroll-slim w-full overflow-y-auto border-r p-4 sm:p-6 lg:w-[46%] lg:max-w-[640px] ${
+              mobileTab === 'form' ? 'block' : 'hidden lg:block'
+            }`}
             style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}
           >
             <FormBuilder
@@ -378,14 +481,15 @@ export default function App() {
               }}
             />
           </div>
-        )}
 
-        {/* Right pane: Preview Canvas (Parchment staging) */}
-        <div
-          ref={canvasWrapRef}
-          className={`scroll-slim relative min-h-0 flex-1 overflow-auto ${showForm ? 'hidden lg:block' : 'block'}`}
-          style={{ background: 'var(--surface-2)' }}
-        >
+          {/* Right pane: Preview Canvas (Parchment staging) */}
+          <div
+            ref={canvasWrapRef}
+            className={`scroll-slim relative min-h-0 flex-1 overflow-auto ${
+              mobileTab === 'preview' ? 'block' : 'hidden lg:block'
+            }`}
+            style={{ background: 'var(--surface-2)' }}
+          >
           {/* Floating Zoom & Page Indicator Capsule */}
           <div className="sticky top-3 z-10 flex items-center justify-between px-6 pointer-events-none">
             {/* Page Count indicator badge */}
@@ -473,6 +577,7 @@ export default function App() {
           </div>
         </div>
       </div>
+    )}
 
       {/* ---------------- 3. Design & Customizer Modal Sheet ---------------- */}
       {showCustomizer && (
