@@ -1,4 +1,13 @@
-import type { AppState, CVData } from '../types/cv';
+import type { AppState, CVData, PersonalInfo } from '../types/cv';
+
+/** Generates clean, automated PDF filename from name and title. */
+export function generatePdfFileName(personal?: Partial<PersonalInfo>): string {
+  const name = personal?.fullName?.trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+  const title = personal?.title?.trim().replace(/[^\w\s-]/g, '').replace(/\s+/g, '_');
+  if (name && title) return `${name}_${title}_CV`;
+  if (name) return `${name}_CV`;
+  return `CV_${new Date().toISOString().slice(0, 10)}`;
+}
 
 /** Export the live A4 node to a high-quality PDF via html2pdf.js (lazy-loaded). */
 export async function exportPdf(fileName: string) {
@@ -18,7 +27,7 @@ export async function exportPdf(fileName: string) {
     await html2pdf()
       .set({
         margin: 0,
-        filename: `${fileName || 'cv'}.pdf`,
+        filename: `${fileName || 'CV'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
         jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' },
@@ -36,17 +45,22 @@ export function printCV() {
   window.print();
 }
 
+/** Exports state to JSON including a format version field. */
 export function downloadJson(state: AppState, fileName: string) {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const payload = {
+    version: 1,
+    ...state,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${fileName || 'cv'}.json`;
+  a.download = `${fileName || 'CV'}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }
 
-/** Parse an imported JSON file. Accepts either a full AppState or a bare CVData. */
+/** Parse an imported JSON file. Accepts versioned format, full AppState, or legacy bare CVData. */
 export function parseImport(text: string): Partial<AppState> | null {
   try {
     const data = JSON.parse(text);

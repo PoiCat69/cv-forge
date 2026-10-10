@@ -3,25 +3,30 @@ import { createPortal } from 'react-dom';
 import {
   FileText, Moon, Sun, Download, FileJson, Upload, Printer,
   RotateCcw, ZoomIn, ZoomOut, Sliders, PanelLeftClose, PanelLeft,
+  Undo2, Redo2, Check, AlertCircle,
 } from 'lucide-react';
 import type { AppState, Customization, CVData } from './types/cv';
 import { defaultState, emptyCV, defaultCustomization } from './lib/defaults';
 import { useLocalStorage } from './hooks/useLocalStorage';
+import { useCVHistory } from './hooks/useCVHistory';
 import { useTheme } from './hooks/useTheme';
 import { FormBuilder } from './components/FormBuilder';
 import { CVPreview, A4_W } from './components/CVPreview';
 import { Customizer } from './components/Customizer';
-import { exportPdf, printCV, downloadJson, parseImport } from './lib/export';
+import { exportPdf, printCV, downloadJson, parseImport, generatePdfFileName } from './lib/export';
+import { Toast, type ToastData } from './components/Toast';
 
 const STORAGE_KEY = 'cvforge.state.v1';
 
 export default function App() {
-  const [state, setState] = useLocalStorage<AppState>(STORAGE_KEY, defaultState);
+  const [state, setState, { saveStatus, errorMessage }] = useLocalStorage<AppState>(STORAGE_KEY, defaultState);
+  const { undo, redo, canUndo, canRedo, commitSnapshot } = useCVHistory(state, setState);
   const { theme, toggle } = useTheme();
   const [showForm, setShowForm] = useState(true);
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [zoom, setZoom] = useState(0.72);
   const [exporting, setExporting] = useState(false);
+  const [toast, setToast] = useState<ToastData | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
 
@@ -52,28 +57,34 @@ export default function App() {
     reader.onload = () => {
       const parsed = parseImport(String(reader.result));
       if (!parsed) {
-        alert('That file is not valid CV Forge JSON.');
+        alert('File JSON tidak valid atau format salah.');
         return;
       }
+      commitSnapshot();
       setState((s) => ({
         cv: parsed.cv ?? s.cv,
         customization: parsed.customization ?? s.customization,
       }));
+      setToast({
+        id: String(Date.now()),
+        message: 'CV berhasil diimpor',
+        onUndo: undo,
+      });
     };
     reader.readAsText(file);
   };
 
   const handleExportPdf = async () => {
     setExporting(true);
-    // Temporarily force 1:1 scale so html2canvas captures full resolution.
     try {
-      await exportPdf(state.cv.personal.fullName || 'cv');
+      const pdfBaseName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
+      await exportPdf(pdfBaseName);
     } finally {
       setExporting(false);
     }
   };
 
-  const fileName = state.cv.personal.fullName?.trim().replace(/\s+/g, '_') || 'cv';
+  const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
 
   return (
     <div className="flex h-screen flex-col overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
@@ -85,19 +96,90 @@ export default function App() {
           background: 'color-mix(in srgb, var(--surface) 85%, transparent)',
         }}
       >
-        {/* Brand / Logo */}
+        {/* Brand / Logo & Status */}
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-control bg-[var(--primary)] text-white transition active:scale-[0.95]">
             <FileText size={17} />
           </div>
           <div>
-            <h1 className="text-base font-semibold leading-none tracking-[-0.224px] text-[var(--text)]">CV Forge</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-base font-semibold leading-none tracking-[-0.224px] text-[var(--text)]">CV Forge</h1>
+              {/* Auto-save status pill */}
+              <div className="hidden sm:flex items-center">
+                {saveStatus === 'saving' && (
+                  <span className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] font-normal">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Menyimpan…</span>
+                  </span>
+                )}
+                {saveStatus === 'saved' && (
+                  <span className="flex items-center gap-1 text-xs text-[var(--text-muted)] font-normal" title="Semua perubahan tersimpan otomatis di browser">
+                    <Check size={12} className="text-emerald-500" />
+                    <span>Tersimpan</span>
+                  </span>
+                )}
+                {saveStatus === 'error' && (
+                  <span className="flex items-center gap-1 text-xs text-red-500 font-normal" title={errorMessage || 'Gagal menyimpan ke penyimpanan lokal'}>
+                    <AlertCircle size={12} />
+                    <span>Gagal simpan</span>
+                  </span>
+                )}
+              </div>
+            </div>
             <p className="mt-0.5 text-xs tracking-[-0.12px] text-[var(--text-muted)]">Real-time CV builder</p>
+          </div>
+
+          {/* Undo / Redo buttons */}
+          <div className="ml-2 hidden items-center gap-0.5 rounded-control border border-[var(--border)] p-0.5 md:flex">
+            <button
+              type="button"
+              className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
+              onClick={undo}
+              disabled={!canUndo}
+              title="Urungkan (Ctrl+Z)"
+              aria-label="Urungkan"
+            >
+              <Undo2 size={14} />
+            </button>
+            <button
+              type="button"
+              className="grid h-7 w-7 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard hover:bg-[var(--border-subtle)] hover:text-[var(--text)] disabled:opacity-30 disabled:pointer-events-none active:scale-[0.95]"
+              onClick={redo}
+              disabled={!canRedo}
+              title="Ulangi (Ctrl+Shift+Z)"
+              aria-label="Ulangi"
+            >
+              <Redo2 size={14} />
+            </button>
           </div>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* Mobile undo/redo */}
+          <div className="flex items-center gap-0.5 md:hidden">
+            <button
+              type="button"
+              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard disabled:opacity-30 active:scale-[0.95]"
+              onClick={undo}
+              disabled={!canUndo}
+              title="Urungkan"
+              aria-label="Urungkan"
+            >
+              <Undo2 size={15} />
+            </button>
+            <button
+              type="button"
+              className="grid h-8 w-8 place-items-center rounded-control text-[var(--text-muted)] transition duration-fast ease-standard disabled:opacity-30 active:scale-[0.95]"
+              onClick={redo}
+              disabled={!canRedo}
+              title="Ulangi"
+              aria-label="Ulangi"
+            >
+              <Redo2 size={15} />
+            </button>
+          </div>
+
           {/* Mobile pane toggle */}
           <button
             type="button"
@@ -201,7 +283,19 @@ export default function App() {
             className="scroll-slim w-full overflow-y-auto border-r p-4 sm:p-6 lg:w-[46%] lg:max-w-[640px]"
             style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}
           >
-            <FormBuilder cv={state.cv} setCV={setCV} accent={state.customization.accent} />
+            <FormBuilder
+              cv={state.cv}
+              setCV={setCV}
+              accent={state.customization.accent}
+              onDeleteToast={(msg) => {
+                commitSnapshot();
+                setToast({
+                  id: String(Date.now()),
+                  message: msg,
+                  onUndo: undo,
+                });
+              }}
+            />
           </div>
         )}
 
@@ -279,7 +373,14 @@ export default function App() {
                 className="btn btn-outline rounded-pill px-3 py-1.5 text-xs active:scale-[0.95]"
                 onClick={() => {
                   if (confirm('Reset all content and design to the sample CV?')) {
+                    commitSnapshot();
                     setState({ cv: defaultState.cv, customization: defaultCustomization });
+                    setShowCustomizer(false);
+                    setToast({
+                      id: String(Date.now()),
+                      message: 'CV direset ke data contoh',
+                      onUndo: undo,
+                    });
                   }
                 }}
               >
@@ -298,7 +399,14 @@ export default function App() {
                   className="btn btn-ghost w-full rounded-pill text-sm text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]"
                   onClick={() => {
                     if (confirm('Clear all fields and start from blank?')) {
+                      commitSnapshot();
                       setCV(() => emptyCV);
+                      setShowCustomizer(false);
+                      setToast({
+                        id: String(Date.now()),
+                        message: 'CV dikosongkan',
+                        onUndo: undo,
+                      });
                     }
                   }}
                 >
@@ -320,6 +428,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Floating Toast Notification */}
+      <Toast toast={toast} onDismiss={() => setToast(null)} />
 
       {/* ---------------- 4. Hidden print/export copy ---------------- */}
       {typeof document !== 'undefined' &&

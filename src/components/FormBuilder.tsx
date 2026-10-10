@@ -17,10 +17,12 @@ export function FormBuilder({
   cv,
   setCV,
   accent,
+  onDeleteToast,
 }: {
   cv: CVData;
   setCV: SetCV;
   accent: string;
+  onDeleteToast?: (msg: string) => void;
 }) {
   const [open, setOpen] = useState<Record<string, boolean>>({ personal: true, summary: true });
   const toggle = (k: string) => setOpen((o) => ({ ...o, [k]: !o[k] }));
@@ -79,7 +81,10 @@ export function FormBuilder({
               key={item.id}
               item={item}
               onChange={(patch) => setCV((c) => ({ ...c, experience: c.experience.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) }))}
-              onRemove={() => setCV((c) => ({ ...c, experience: c.experience.filter((x) => x.id !== item.id) }))}
+              onRemove={() => {
+                setCV((c) => ({ ...c, experience: c.experience.filter((x) => x.id !== item.id) }));
+                onDeleteToast?.('Pengalaman kerja dihapus');
+              }}
               index={i}
             />
           ))}
@@ -96,7 +101,10 @@ export function FormBuilder({
               item={item}
               accent={accent}
               onChange={(patch) => setCV((c) => ({ ...c, projects: c.projects.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) }))}
-              onRemove={() => setCV((c) => ({ ...c, projects: c.projects.filter((x) => x.id !== item.id) }))}
+              onRemove={() => {
+                setCV((c) => ({ ...c, projects: c.projects.filter((x) => x.id !== item.id) }));
+                onDeleteToast?.('Proyek dihapus');
+              }}
             />
           ))}
           <AddButton label="Add project" onClick={() => setCV((c) => ({ ...c, projects: [...c.projects, newProject()] }))} />
@@ -111,7 +119,10 @@ export function FormBuilder({
               key={item.id}
               item={item}
               onChange={(patch) => setCV((c) => ({ ...c, education: c.education.map((x) => (x.id === item.id ? { ...x, ...patch } : x)) }))}
-              onRemove={() => setCV((c) => ({ ...c, education: c.education.filter((x) => x.id !== item.id) }))}
+              onRemove={() => {
+                setCV((c) => ({ ...c, education: c.education.filter((x) => x.id !== item.id) }));
+                onDeleteToast?.('Pendidikan dihapus');
+              }}
             />
           ))}
           <AddButton label="Add education" onClick={() => setCV((c) => ({ ...c, education: [...c.education, newEducation()] }))} />
@@ -124,7 +135,10 @@ export function FormBuilder({
                   <input className="app-input" placeholder="Certificate" value={item.name} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, name: e.target.value } : x)) }))} />
                   <input className="app-input" placeholder="Issuer" value={item.issuer} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, issuer: e.target.value } : x)) }))} />
                   <input className="app-input" placeholder="Year" value={item.date} onChange={(e) => setCV((c) => ({ ...c, certifications: c.certifications.map((x) => (x.id === item.id ? { ...x, date: e.target.value } : x)) }))} />
-                  <button type="button" aria-label="Remove certification" className="btn grid h-10 w-10 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => setCV((c) => ({ ...c, certifications: c.certifications.filter((x) => x.id !== item.id) }))}><Trash2 size={15} /></button>
+                  <button type="button" aria-label="Remove certification" className="btn grid h-10 w-10 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => {
+                    setCV((c) => ({ ...c, certifications: c.certifications.filter((x) => x.id !== item.id) }));
+                    onDeleteToast?.('Sertifikasi dihapus');
+                  }}><Trash2 size={15} /></button>
                 </div>
               ))}
               <AddButton label="Add certification" onClick={() => setCV((c) => ({ ...c, certifications: [...c.certifications, newCert()] }))} />
@@ -140,7 +154,10 @@ export function FormBuilder({
             <div key={grp.id} className="animate-item-enter space-y-3 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-4">
               <div className="flex items-center gap-2">
                 <input className="app-input flex-1" placeholder="Category (e.g. Languages)" value={grp.category} onChange={(e) => setCV((c) => ({ ...c, skills: c.skills.map((x) => (x.id === grp.id ? { ...x, category: e.target.value } : x)) }))} />
-                <button type="button" aria-label="Remove skill group" className="btn grid h-10 w-10 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => setCV((c) => ({ ...c, skills: c.skills.filter((x) => x.id !== grp.id) }))}><Trash2 size={15} /></button>
+                <button type="button" aria-label="Remove skill group" className="btn grid h-10 w-10 place-items-center rounded-control text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => {
+                  setCV((c) => ({ ...c, skills: c.skills.filter((x) => x.id !== grp.id) }));
+                  onDeleteToast?.('Grup keahlian dihapus');
+                }}><Trash2 size={15} /></button>
               </div>
               <TagInput
                 values={grp.skills}
@@ -166,7 +183,10 @@ export function FormBuilder({
               </div>
               <input className="app-input" placeholder="One-line description (optional)" value={item.description} onChange={(e) => setCV((c) => ({ ...c, honors: c.honors.map((x) => (x.id === item.id ? { ...x, description: e.target.value } : x)) }))} />
               <div className="flex justify-end">
-                <button type="button" className="btn rounded-pill px-3 py-1.5 text-xs text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => setCV((c) => ({ ...c, honors: c.honors.filter((x) => x.id !== item.id) }))}><Trash2 size={14} /> Remove honor</button>
+                <button type="button" className="btn rounded-pill px-3 py-1.5 text-xs text-red-600 transition duration-fast ease-standard hover:bg-red-500/10 dark:text-red-400 active:scale-[0.95]" onClick={() => {
+                  setCV((c) => ({ ...c, honors: c.honors.filter((x) => x.id !== item.id) }));
+                  onDeleteToast?.('Penghargaan dihapus');
+                }}><Trash2 size={14} /> Remove honor</button>
               </div>
             </div>
           ))}
