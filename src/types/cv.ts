@@ -126,6 +126,8 @@ export interface Customization {
   density: Density;
   fontSizeScale?: number; // 0.85 - 1.15, default 1
   marginScale?: number;   // 0.80 - 1.25, default 1
+  paperSize?: 'a4' | 'letter'; // default 'a4'
+  documentLanguage?: 'id' | 'en'; // default 'id'
 }
 
 export interface AppState {

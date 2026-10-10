@@ -14,13 +14,50 @@ export function AvatarUploader({
 
   const handleFile = (file?: File) => {
     if (!file) return;
-    if (file.size > 4_000_000) {
-      alert('Please choose an image under 4MB.');
-      return;
-    }
     const reader = new FileReader();
-    reader.onload = () =>
-      onChange({ avatar: String(reader.result), avatarZoom: 1, avatarOffsetX: 0, avatarOffsetY: 0 });
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        // Compress and resize avatar to maximum 480px to save storage space
+        const maxDim = 480;
+        let width = img.width;
+        let height = img.height;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL('image/jpeg', 0.85);
+          onChange({
+            avatar: compressed,
+            avatarZoom: 1,
+            avatarOffsetX: 0,
+            avatarOffsetY: 0,
+          });
+        } else {
+          onChange({
+            avatar: String(e.target?.result),
+            avatarZoom: 1,
+            avatarOffsetX: 0,
+            avatarOffsetY: 0,
+          });
+        }
+      };
+      img.src = String(e.target?.result);
+    };
     reader.readAsDataURL(file);
   };
 

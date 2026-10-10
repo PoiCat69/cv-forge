@@ -5,6 +5,7 @@ import {
   RotateCcw, ZoomIn, ZoomOut, Sliders, PanelLeftClose, PanelLeft,
   Undo2, Redo2, Check, AlertCircle, Layers, ChevronDown, HelpCircle,
   Maximize2, Minimize2, Copy, Image, History, Sparkles, FilePlus, MoreHorizontal,
+  Search,
 } from 'lucide-react';
 import type { AppState, Customization, CVData } from './types/cv';
 import { defaultState, emptyCV, defaultCustomization } from './lib/defaults';
@@ -14,7 +15,7 @@ import { useCVVersions } from './hooks/useCVVersions';
 import { useTheme } from './hooks/useTheme';
 import { useCVSnapshots } from './hooks/useCVSnapshots';
 import { FormBuilder } from './components/FormBuilder';
-import { CVPreview, A4_W, A4_H } from './components/CVPreview';
+import { CVPreview, PAGE_DIMENSIONS } from './components/CVPreview';
 import { Customizer } from './components/Customizer';
 import {
   exportPdf, printCV, downloadJson, validateAndParseImport, generatePdfFileName,
@@ -24,6 +25,7 @@ import { Toast, type ToastData } from './components/Toast';
 import { VersionManagerModal } from './components/VersionManagerModal';
 import { KeyboardShortcutsModal } from './components/KeyboardShortcutsModal';
 import { SnapshotHistoryModal } from './components/SnapshotHistoryModal';
+import { CommandPaletteModal } from './components/CommandPaletteModal';
 
 const STORAGE_KEY = 'cvforge.state.v1';
 
@@ -47,12 +49,38 @@ export default function App() {
   const [showCustomizer, setShowCustomizer] = useState(false);
   const [showVersionsModal, setShowVersionsModal] = useState(false);
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [zoom, setZoom] = useState(0.72);
   const [pageCount, setPageCount] = useState(1);
   const [exporting, setExporting] = useState(false);
   const [toast, setToast] = useState<ToastData | null>(null);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showBackupReminder, setShowBackupReminder] = useState(() => {
+    try {
+      const dismissed = localStorage.getItem('cvforge.backup_reminder_dismissed');
+      if (dismissed && Date.now() < Number(dismissed)) return false;
+      const lastBackup = localStorage.getItem('cvforge.last_backup_time');
+      if (!lastBackup) {
+        const firstSeen = localStorage.getItem('cvforge.first_installed');
+        if (!firstSeen) {
+          localStorage.setItem('cvforge.first_installed', String(Date.now()));
+          return false;
+        }
+        return Date.now() - Number(firstSeen) > 7 * 24 * 60 * 60 * 1000;
+      }
+      return Date.now() - Number(lastBackup) > 7 * 24 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  });
+
+  const dismissBackupReminder = () => {
+    setShowBackupReminder(false);
+    try {
+      localStorage.setItem('cvforge.backup_reminder_dismissed', String(Date.now() + 7 * 24 * 60 * 60 * 1000));
+    } catch {}
+  };
   const { snapshots, addSnapshot, deleteSnapshot } = useCVSnapshots(state);
   const importRef = useRef<HTMLInputElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
@@ -94,19 +122,21 @@ export default function App() {
     [setState],
   );
 
+  const paper = PAGE_DIMENSIONS[state.customization.paperSize || 'a4'] || PAGE_DIMENSIONS.a4;
+
   const fitWidth = useCallback(() => {
     const el = canvasWrapRef.current;
     if (!el) return;
     const avail = el.clientWidth - 48;
-    setZoom(Math.min(1.2, Math.max(0.35, avail / A4_W)));
-  }, []);
+    setZoom(Math.min(1.2, Math.max(0.35, avail / paper.w)));
+  }, [paper.w]);
 
   const fitPage = useCallback(() => {
     const el = canvasWrapRef.current;
     if (!el) return;
     const availH = el.clientHeight - 80;
-    setZoom(Math.min(1.2, Math.max(0.35, availH / A4_H)));
-  }, []);
+    setZoom(Math.min(1.2, Math.max(0.35, availH / paper.h)));
+  }, [paper.h]);
 
   // Fit-to-width zoom on initial resize of the canvas column.
   useEffect(() => {
@@ -114,11 +144,11 @@ export default function App() {
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const avail = el.clientWidth - 48;
-      setZoom(Math.min(1, Math.max(0.4, avail / A4_W)));
+      setZoom(Math.min(1, Math.max(0.4, avail / paper.w)));
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [paper.w]);
 
   const handleActiveSectionChange = useCallback((sectionKey: string) => {
     const el = canvasWrapRef.current?.querySelector(`#cv-section-${sectionKey}`);
@@ -150,17 +180,26 @@ export default function App() {
     reader.readAsText(file);
   };
 
+  const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
+
   const handleExportPdf = useCallback(async () => {
     setExporting(true);
     try {
-      const pdfBaseName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
-      await exportPdf(pdfBaseName);
+      const pdfBaseName = fileName;
+      await exportPdf(pdfBaseName, state.customization.paperSize);
     } finally {
       setExporting(false);
     }
-  }, [state.cv.personal]);
+  }, [fileName, state.customization.paperSize]);
 
-  const fileName = generatePdfFileName(state.cv.personal).replace(/\.pdf$/i, '');
+  const handleExportJson = useCallback(() => {
+    downloadJson(state, fileName);
+    try {
+      localStorage.setItem('cvforge.last_backup_time', String(Date.now()));
+    } catch {}
+    setShowBackupReminder(false);
+    setToast({ id: String(Date.now()), message: 'Cadangan data JSON berhasil diunduh' });
+  }, [state, fileName]);
 
   const handleCopyText = async () => {
     const ok = await copyPlainText(state.cv);
@@ -179,7 +218,7 @@ export default function App() {
   const handleExportPng = async () => {
     setExporting(true);
     try {
-      await exportPng(fileName);
+      await exportPng(fileName, state.customization.paperSize);
       setToast({ id: String(Date.now()), message: 'Gambar PNG berhasil diunduh' });
     } catch {
       alert('Gagal mengekspor gambar PNG.');
@@ -199,18 +238,24 @@ export default function App() {
     setState((s) => ({ ...s, cv: emptyCV }));
     setToast({ id: String(Date.now()), message: 'Formulir dikosongkan (Mulai kosong)', onUndo: undo });
   };
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setShowCommandPalette((v) => !v);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '/') {
         e.preventDefault();
         setShowShortcutsModal((v) => !v);
       } else if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
         e.preventDefault();
         handleExportPdf();
       } else if (e.key === 'Escape') {
+        setShowCommandPalette(false);
         setShowShortcutsModal(false);
         setShowVersionsModal(false);
         setShowCustomizer(false);
+        setShowSnapshotModal(false);
       }
     };
     window.addEventListener('keydown', handler);
@@ -219,6 +264,14 @@ export default function App() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
+      {/* Accessibility Skip Link */}
+      <a
+        href="#main-form-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-control focus:bg-[var(--primary)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-md"
+      >
+        Lewati ke Formulir Utama
+      </a>
+
       {/* ---------------- 1. Top Frosted Bar (Apple sub-nav-frosted style) ---------------- */}
       <header
         className="sticky top-0 z-20 flex h-[52px] shrink-0 items-center justify-between border-b px-4 backdrop-blur-md sm:px-6 app-surface"
@@ -387,7 +440,7 @@ export default function App() {
           <button
             type="button"
             className="btn btn-outline rounded-pill px-4 py-1.5 text-sm active:scale-[0.95]"
-            onClick={() => downloadJson(state, fileName)}
+            onClick={handleExportJson}
             title="Export JSON"
             aria-label="Export JSON"
           >
@@ -525,6 +578,17 @@ export default function App() {
             <span>{exporting ? 'Exporting…' : 'PDF'}</span>
           </button>
 
+          {/* Command Palette Trigger */}
+          <button
+            type="button"
+            className="btn btn-ghost grid h-10 w-10 place-items-center rounded-control p-0 text-[var(--text-muted)] hover:text-[var(--text)] transition duration-fast ease-standard active:scale-[0.95]"
+            onClick={() => setShowCommandPalette(true)}
+            title="Menu Cepat / Command Palette (Ctrl+K)"
+            aria-label="Command Palette (Ctrl+K)"
+          >
+            <Search size={16} />
+          </button>
+
           {/* Shortcuts Help Button */}
           <button
             type="button"
@@ -558,6 +622,34 @@ export default function App() {
         </div>
       </header>
 
+      {/* Backup Reminder Banner (if >7 days since last JSON download) */}
+      {showBackupReminder && (
+        <div className="flex items-center justify-between gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs text-amber-900 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={15} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <span>
+              Sudah lebih dari 7 hari sejak cadangan JSON terakhir. Unduh cadangan untuk mengamankan data riwayat hidup Anda.
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleExportJson}
+              className="rounded-control bg-amber-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-amber-700 active:scale-[0.95]"
+            >
+              Unduh JSON
+            </button>
+            <button
+              type="button"
+              onClick={dismissBackupReminder}
+              className="rounded-control px-2 py-1 text-xs hover:bg-amber-500/20 text-[var(--text-muted)]"
+            >
+              Nanti
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Segmented Tab: Form vs Preview */}
       {!focusMode && (
         <div className="flex lg:hidden items-center border-b border-[var(--border)] bg-[var(--surface)] px-4 py-2 shrink-0">
@@ -590,7 +682,13 @@ export default function App() {
 
       {/* ---------------- 2. Split Workspace Body ---------------- */}
       {focusMode ? (
-        <div className="scroll-slim flex min-h-0 flex-1 overflow-y-auto p-4 sm:p-8" style={{ background: 'var(--bg)' }}>
+        <div
+          id="main-form-content"
+          role="region"
+          aria-label="Editor Formulir CV Mode Fokus"
+          className="scroll-slim flex min-h-0 flex-1 overflow-y-auto p-4 sm:p-8"
+          style={{ background: 'var(--bg)' }}
+        >
           <div className="mx-auto w-full max-w-3xl space-y-4">
             <div className="flex items-center justify-between rounded-control border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-4 py-2.5 text-xs font-medium text-[var(--primary)]">
               <span className="flex items-center gap-2">
@@ -625,6 +723,9 @@ export default function App() {
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Left pane: Form Builder */}
           <div
+            id="main-form-content"
+            role="region"
+            aria-label="Editor Formulir CV"
             className={`scroll-slim w-full overflow-y-auto border-r p-4 sm:p-6 lg:w-[46%] lg:max-w-[640px] ${
               mobileTab === 'form' ? 'block' : 'hidden lg:block'
             }`}
@@ -649,6 +750,8 @@ export default function App() {
           {/* Right pane: Preview Canvas (Parchment staging) */}
           <div
             ref={canvasWrapRef}
+            role="region"
+            aria-label="Pratinjau Dokumen CV"
             className={`scroll-slim relative min-h-0 flex-1 overflow-auto ${
               mobileTab === 'preview' ? 'block' : 'hidden lg:block'
             }`}
@@ -661,18 +764,18 @@ export default function App() {
               {pageCount > 1 ? (
                 <div
                   className="flex items-center gap-1.5 rounded-pill border border-amber-500/50 bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300 backdrop-blur-md animate-modal-enter shadow-none"
-                  title="Dokumen melebihi 1 halaman A4. Periksa garis batas halaman di preview untuk memastikan teks tidak terpotong saat diekspor."
+                  title={`Dokumen melebihi 1 halaman ${state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}. Periksa garis batas halaman di preview untuk memastikan teks tidak terpotong saat diekspor.`}
                 >
                   <AlertCircle size={13} />
-                  <span>{pageCount} Halaman A4</span>
+                  <span>{pageCount} Halaman {state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}</span>
                 </div>
               ) : (
                 <div
                   className="flex items-center gap-1.5 rounded-pill border border-[var(--border)] px-3 py-1 text-xs font-medium text-[var(--text-muted)] backdrop-blur-md"
                   style={{ background: 'color-mix(in srgb, var(--surface) 90%, transparent)' }}
-                  title="Dokumen pas dalam 1 halaman A4"
+                  title={`Dokumen pas dalam 1 halaman ${state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}`}
                 >
-                  <span>1 Halaman A4</span>
+                  <span>1 Halaman {state.customization.paperSize === 'letter' ? 'Letter' : 'A4'}</span>
                 </div>
               )}
             </div>
@@ -866,6 +969,32 @@ export default function App() {
       <KeyboardShortcutsModal
         isOpen={showShortcutsModal}
         onClose={() => setShowShortcutsModal(false)}
+      />
+
+      {/* Command Palette Modal (Ctrl+K) */}
+      <CommandPaletteModal
+        isOpen={showCommandPalette}
+        onClose={() => setShowCommandPalette(false)}
+        onExportPdf={handleExportPdf}
+        onExportPng={handleExportPng}
+        onExportJson={handleExportJson}
+        onImportJson={() => importRef.current?.click()}
+        onExportMarkdown={handleExportMarkdown}
+        onCopyText={handleCopyText}
+        onPrint={printCV}
+        onToggleTheme={cycleTheme}
+        onToggleFocusMode={() => setFocusMode((v) => !v)}
+        onOpenCustomizer={() => setShowCustomizer(true)}
+        onOpenVersions={() => setShowVersionsModal(true)}
+        onOpenSnapshots={() => setShowSnapshotModal(true)}
+        onOpenShortcuts={() => setShowShortcutsModal(true)}
+        onLoadSample={handleLoadSample}
+        onClearBlank={handleClearBlank}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onFocusSection={(sec: string) => handleActiveSectionChange(sec)}
       />
 
       {/* ---------------- 4. Hidden print/export copy ---------------- */}

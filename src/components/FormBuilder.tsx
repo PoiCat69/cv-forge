@@ -6,7 +6,7 @@ import {
 import type {
   CVData, ExperienceItem, ProjectItem, EducationItem, CertificationItem, SkillGroup, HonorItem,
 } from '../types/cv';
-import { uid } from '../lib/defaults';
+import { uid, emptyCV } from '../lib/defaults';
 import { polishSummary, suggestBullet } from '../lib/polish';
 import { AccordionSection, Field, TagInput, AddButton, DateInput, DEFAULT_SKILL_SUGGESTIONS } from './ui';
 import { AvatarUploader } from './AvatarUploader';
@@ -17,6 +17,70 @@ function formatLink(url: string): string {
   if (!trimmed) return '';
   if (/^(https?:\/\/|mailto:)/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
+}
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function formatPhoneIndo(phone: string): string {
+  const trimmed = phone.trim();
+  if (!trimmed) return '';
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.startsWith('08')) {
+    const rest = digits.slice(1);
+    if (rest.length >= 9) {
+      return `+62 ${rest.slice(0, 3)}-${rest.slice(3, 7)}-${rest.slice(7)}`;
+    }
+    return `+62 ${rest}`;
+  }
+  if (digits.startsWith('628')) {
+    const rest = digits.slice(2);
+    if (rest.length >= 9) {
+      return `+62 ${rest.slice(0, 3)}-${rest.slice(3, 7)}-${rest.slice(7)}`;
+    }
+    return `+62 ${rest}`;
+  }
+  return trimmed;
+}
+
+function SectionResetButton({ onReset, label = 'Kosongkan section ini' }: { onReset: () => void; label?: string }) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (confirming) {
+    return (
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
+        <span className="text-xs text-[var(--text-muted)]">Yakin ingin mengosongkan?</span>
+        <button
+          type="button"
+          onClick={() => {
+            setConfirming(false);
+            onReset();
+          }}
+          className="rounded-control px-2 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
+        >
+          Ya, Kosongkan
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="rounded-control px-2 py-0.5 text-xs text-[var(--text-muted)] hover:bg-[var(--border-subtle)]"
+        >
+          Batal
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex justify-end pt-2 border-t border-[var(--border-subtle)]">
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="text-[11px] text-[var(--text-muted)] hover:text-red-500 transition duration-fast"
+      >
+        {label}
+      </button>
+    </div>
+  );
 }
 
 type SetCV = (updater: (cv: CVData) => CVData) => void;
@@ -208,13 +272,43 @@ export function FormBuilder({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Full name"><input className="app-input" value={cv.personal.fullName} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, fullName: e.target.value } }))} placeholder="Jane Doe" /></Field>
             <Field label="Headline / title" hint="A punchy role, e.g. 'Senior Backend Engineer · Payments'"><input className="app-input" value={cv.personal.title} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, title: e.target.value } }))} placeholder="Senior Software Engineer" /></Field>
-            <Field label="Email"><input className="app-input" value={cv.personal.email} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, email: e.target.value } }))} placeholder="jane@example.com" /></Field>
-            <Field label="Phone"><input className="app-input" value={cv.personal.phone} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, phone: e.target.value } }))} placeholder="+1 555 000 1234" /></Field>
+            <Field
+              label="Email"
+              hint={cv.personal.email?.trim() && !EMAIL_REGEX.test(cv.personal.email.trim()) ? 'Format email tidak valid (contoh: user@domain.com)' : undefined}
+            >
+              <input
+                className={`app-input ${cv.personal.email?.trim() && !EMAIL_REGEX.test(cv.personal.email.trim()) ? '!border-amber-500' : ''}`}
+                type="email"
+                value={cv.personal.email}
+                onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, email: e.target.value } }))}
+                placeholder="jane@example.com"
+              />
+            </Field>
+            <Field label="Phone" hint="Konversi otomatis format +62">
+              <input
+                className="app-input"
+                type="tel"
+                value={cv.personal.phone}
+                onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, phone: e.target.value } }))}
+                onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, phone: formatPhoneIndo(e.target.value) } }))}
+                placeholder="+62 812-3456-7890"
+              />
+            </Field>
             <Field label="Location"><input className="app-input" value={cv.personal.location} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, location: e.target.value } }))} placeholder="City, Country" /></Field>
             <Field label="Website"><input className="app-input" value={cv.personal.website} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, website: e.target.value } }))} onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, website: formatLink(e.target.value) } }))} placeholder="yoursite.dev" /></Field>
             <Field label="LinkedIn"><input className="app-input" value={cv.personal.linkedin} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, linkedin: e.target.value } }))} onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, linkedin: formatLink(e.target.value) } }))} placeholder="linkedin.com/in/you" /></Field>
             <Field label="GitHub"><input className="app-input" value={cv.personal.github} onChange={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, github: e.target.value } }))} onBlur={(e) => setCV((c) => ({ ...c, personal: { ...c.personal, github: formatLink(e.target.value) } }))} placeholder="github.com/you" /></Field>
           </div>
+          <SectionResetButton
+            label="Kosongkan informasi pribadi"
+            onReset={() => {
+              setCV((c) => ({
+                ...c,
+                personal: { ...emptyCV.personal },
+              }));
+              onDeleteToast?.('Informasi pribadi dikosongkan');
+            }}
+          />
         </div>
       </AccordionSection>
 
@@ -234,6 +328,7 @@ export function FormBuilder({
           <Field label="Professional summary" hint="3-4 sentences highlighting impact, domain expertise, and career trajectory">
             <textarea
               className="app-textarea min-h-[96px]"
+              spellCheck={true}
               value={cv.summary}
               placeholder="Backend engineer with 6+ years designing distributed systems…"
               onChange={(e) => setCV((c) => ({ ...c, summary: e.target.value }))}
@@ -254,6 +349,15 @@ export function FormBuilder({
               <Sparkles size={14} /> <span>Polish writing</span>
             </button>
           </div>
+          {cv.summary && (
+            <SectionResetButton
+              label="Kosongkan ringkasan"
+              onReset={() => {
+                setCV((c) => ({ ...c, summary: '' }));
+                onDeleteToast?.('Ringkasan dikosongkan');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
 
@@ -288,6 +392,15 @@ export function FormBuilder({
             />
           ))}
           <AddButton label="Add experience" onClick={() => setCV((c) => ({ ...c, experience: [...c.experience, newExperience()] }))} />
+          {cv.experience.length > 0 && (
+            <SectionResetButton
+              label="Kosongkan daftar pengalaman"
+              onReset={() => {
+                setCV((c) => ({ ...c, experience: [] }));
+                onDeleteToast?.('Daftar pengalaman dikosongkan');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
 
@@ -323,6 +436,15 @@ export function FormBuilder({
             />
           ))}
           <AddButton label="Add project" onClick={() => setCV((c) => ({ ...c, projects: [...c.projects, newProject()] }))} />
+          {cv.projects.length > 0 && (
+            <SectionResetButton
+              label="Kosongkan daftar proyek"
+              onReset={() => {
+                setCV((c) => ({ ...c, projects: [] }));
+                onDeleteToast?.('Daftar proyek dikosongkan');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
 
@@ -399,6 +521,15 @@ export function FormBuilder({
               <AddButton label="Add certification" onClick={() => setCV((c) => ({ ...c, certifications: [...c.certifications, newCert()] }))} />
             </div>
           </div>
+          {(cv.education.length > 0 || cv.certifications.length > 0) && (
+            <SectionResetButton
+              label="Kosongkan pendidikan & sertifikasi"
+              onReset={() => {
+                setCV((c) => ({ ...c, education: [], certifications: [] }));
+                onDeleteToast?.('Pendidikan & sertifikasi dikosongkan');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
 
@@ -454,6 +585,15 @@ export function FormBuilder({
             </div>
           ))}
           <AddButton label="Add skill group" onClick={() => setCV((c) => ({ ...c, skills: [...c.skills, newSkillGroup()] }))} />
+          {cv.skills.length > 0 && (
+            <SectionResetButton
+              label="Kosongkan daftar keahlian"
+              onReset={() => {
+                setCV((c) => ({ ...c, skills: [] }));
+                onDeleteToast?.('Daftar keahlian dikosongkan');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
 
@@ -507,6 +647,15 @@ export function FormBuilder({
             </div>
           ))}
           <AddButton label="Add honor" onClick={() => setCV((c) => ({ ...c, honors: [...c.honors, newHonor()] }))} />
+          {cv.honors.length > 0 && (
+            <SectionResetButton
+              label="Kosongkan daftar penghargaan"
+              onReset={() => {
+                setCV((c) => ({ ...c, honors: [] }));
+                onDeleteToast?.('Daftar penghargaan dikosongkan');
+              }}
+            />
+          )}
         </div>
       </AccordionSection>
     </div>
@@ -590,6 +739,7 @@ function BulletEditor({ bullets, onChange }: { bullets: string[]; onChange: (b: 
         <div key={i} className="animate-item-enter flex items-start gap-2">
           <textarea
             className="app-textarea min-h-[56px] flex-1 resize-y py-2"
+            spellCheck={true}
             value={b}
             placeholder="Increased signup conversion by 23% by redesigning onboarding…"
             onChange={(e) => onChange(bullets.map((x, j) => (j === i ? e.target.value : x)))}

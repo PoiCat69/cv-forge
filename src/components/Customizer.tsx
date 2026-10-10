@@ -245,6 +245,55 @@ export function Customizer({
         </div>
       </div>
 
+      {/* 6. Paper Size & Document Language */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <p className="mb-2 text-sm font-semibold tracking-[-0.224px] text-[var(--text)]">Ukuran Kertas</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(['a4', 'letter'] as const).map((size) => {
+              const isSelected = (custom.paperSize || 'a4') === size;
+              return (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => onChange({ paperSize: size })}
+                  className={`rounded-pill px-3 py-1.5 text-center text-xs font-medium transition duration-fast active:scale-[0.95] ${
+                    isSelected
+                      ? 'border-2 border-[var(--primary)] bg-[var(--surface-pearl)] font-semibold text-[var(--text)]'
+                      : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)]'
+                  }`}
+                >
+                  {size === 'a4' ? 'A4' : 'Letter'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-sm font-semibold tracking-[-0.224px] text-[var(--text)]">Bahasa Dokumen</p>
+          <div className="grid grid-cols-2 gap-2">
+            {(['id', 'en'] as const).map((lang) => {
+              const isSelected = (custom.documentLanguage || 'id') === lang;
+              return (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => onChange({ documentLanguage: lang })}
+                  className={`rounded-pill px-3 py-1.5 text-center text-xs font-medium transition duration-fast active:scale-[0.95] ${
+                    isSelected
+                      ? 'border-2 border-[var(--primary)] bg-[var(--surface-pearl)] font-semibold text-[var(--text)]'
+                      : 'border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text)]'
+                  }`}
+                >
+                  {lang === 'id' ? '🇮🇩 Indonesia' : '🇬🇧 English'}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
       {/* 6. Global Font & Margin Sliders */}
       <div className="space-y-4 rounded-control border border-[var(--border)] bg-[var(--surface-pearl)] p-3.5">
         <div>

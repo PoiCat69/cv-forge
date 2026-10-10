@@ -9,8 +9,8 @@ export function generatePdfFileName(personal?: Partial<PersonalInfo>): string {
   return `CV_${new Date().toISOString().slice(0, 10)}`;
 }
 
-/** Export the live A4 node to a high-quality PDF via html2pdf.js (lazy-loaded). */
-export async function exportPdf(fileName: string) {
+/** Export the live A4 or Letter node to a high-quality PDF via html2pdf.js (lazy-loaded). */
+export async function exportPdf(fileName: string, paperSize: 'a4' | 'letter' = 'a4') {
   const el = document.getElementById('print-root');
   const mount = document.getElementById('print-mount');
   if (!el || !mount) return;
@@ -21,6 +21,10 @@ export async function exportPdf(fileName: string) {
   mount.style.cssText =
     'display:block;position:fixed;left:-10000px;top:0;z-index:-1;background:#ffffff;';
 
+  const isLetter = paperSize === 'letter';
+  const width = isLetter ? 816 : 794;
+  const height = isLetter ? 1056 : 1123;
+
   // Lazy import keeps the main bundle lean.
   const html2pdf = (await import('html2pdf.js')).default;
   try {
@@ -29,8 +33,8 @@ export async function exportPdf(fileName: string) {
         margin: 0,
         filename: `${fileName || 'CV'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: 794 },
-        jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: width },
+        jsPDF: { unit: 'px', format: [width, height], orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
       })
       .from(el)
@@ -133,7 +137,7 @@ export function parseImport(text: string): Partial<AppState> | null {
 }
 
 /** Export live CV to PNG image using html2canvas canvas extraction. */
-export async function exportPng(fileName: string): Promise<void> {
+export async function exportPng(fileName: string, paperSize: 'a4' | 'letter' = 'a4'): Promise<void> {
   const el = document.getElementById('print-root');
   const mount = document.getElementById('print-mount');
   if (!el || !mount) return;
@@ -141,6 +145,9 @@ export async function exportPng(fileName: string): Promise<void> {
   const prev = mount.style.cssText;
   mount.style.cssText =
     'display:block;position:fixed;left:-10000px;top:0;z-index:-1;background:#ffffff;';
+
+  const isLetter = paperSize === 'letter';
+  const width = isLetter ? 816 : 794;
 
   try {
     // @ts-ignore - html2canvas is bundled as dependency of html2pdf.js
@@ -150,7 +157,7 @@ export async function exportPng(fileName: string): Promise<void> {
       scale: 2,
       useCORS: true,
       backgroundColor: '#ffffff',
-      windowWidth: 794,
+      windowWidth: width,
     });
 
     const dataUrl = canvas.toDataURL('image/png');

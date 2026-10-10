@@ -6,9 +6,16 @@ import type { CVData, Customization } from '../types/cv';
 import { FONTS } from '../types/cv';
 import { densityTokens } from '../lib/defaults';
 
-// A4 at 96dpi ≈ 794 × 1123px. We render at that base and scale via transform.
-const A4_W = 794;
-const A4_H = 1123;
+// A4 at 96dpi ≈ 794 × 1123px. Letter at 96dpi ≈ 816 × 1056px.
+export const A4_W = 794;
+export const A4_H = 1123;
+export const LETTER_W = 816;
+export const LETTER_H = 1056;
+
+export const PAGE_DIMENSIONS = {
+  a4: { w: 794, h: 1123, label: 'A4' },
+  letter: { w: 816, h: 1056, label: 'Letter' },
+};
 
 export function CVPreview({
   cv,
@@ -25,6 +32,9 @@ export function CVPreview({
   const [pageCount, setPageCount] = useState(1);
   const font = FONTS.find((f) => f.id === custom.font)?.stack ?? FONTS[0].stack;
   const d = densityTokens[custom.density];
+  const paper = PAGE_DIMENSIONS[custom.paperSize || 'a4'] || PAGE_DIMENSIONS.a4;
+  const paperW = paper.w;
+  const paperH = paper.h;
 
   useEffect(() => {
     if (forPrint) return;
@@ -33,7 +43,7 @@ export function CVPreview({
 
     const measure = () => {
       const h = el.scrollHeight;
-      const count = Math.max(1, Math.ceil((h - 5) / A4_H));
+      const count = Math.max(1, Math.ceil((h - 5) / paperH));
       setPageCount(count);
       onPageCountChange?.(count);
     };
@@ -42,14 +52,14 @@ export function CVPreview({
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [forPrint, cv, custom, onPageCountChange]);
+  }, [forPrint, cv, custom, onPageCountChange, paperH]);
 
   const fontScale = custom.fontSizeScale ?? 1;
   const marginScale = custom.marginScale ?? 1;
 
   const style: CSSProperties = {
-    width: A4_W,
-    minHeight: A4_H,
+    width: paperW,
+    minHeight: paperH,
     fontFamily: font,
     // custom props consumed by template CSS via inline style vars
     ['--accent' as string]: custom.accent,
@@ -64,16 +74,17 @@ export function CVPreview({
     <div
       ref={forPrint ? undefined : containerRef}
       id={forPrint ? 'print-root' : undefined}
+      lang={custom.documentLanguage || 'id'}
       className={forPrint ? 'cv-paper bg-white text-slate-900' : 'relative cv-paper bg-white text-slate-900 shadow-paper'}
       style={style}
     >
       <Template cv={cv} accent={custom.accent} />
 
-      {/* A4 Page Break guidelines (Screen preview only, NEVER in print/PDF) */}
+      {/* Page Break guidelines (Screen preview only, NEVER in print/PDF) */}
       {!forPrint && pageCount > 1 && (
         <>
           {Array.from({ length: pageCount - 1 }).map((_, idx) => {
-            const pageBreakTop = (idx + 1) * A4_H;
+            const pageBreakTop = (idx + 1) * paperH;
             return (
               <div
                 key={idx}
@@ -81,7 +92,7 @@ export function CVPreview({
                 style={{ top: `${pageBreakTop}px` }}
               >
                 <span className="rounded bg-red-600 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
-                  Akhir Halaman {idx + 1} (Batas A4)
+                  Akhir Halaman {idx + 1} (Batas {paper.label})
                 </span>
                 <span className="rounded bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700 shadow-sm dark:bg-red-950 dark:text-red-300">
                   Halaman {idx + 2} dimulai
@@ -400,5 +411,3 @@ const TEMPLATE_MAP = {
   creative: CreativeTemplate,
   classic: ClassicTemplate,
 } as const;
-
-export { A4_W, A4_H };
